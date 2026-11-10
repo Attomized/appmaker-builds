@@ -1,45 +1,1299 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Neon Dodge</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0d12">
+<title>PC Launcher</title>
 <style>
-html,body{margin:0;height:100%;background:#07071a;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-canvas{display:block;width:100vw;height:100vh}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0b0d12;color:#e8ecf4;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+#home{position:fixed;inset:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 16px 40px}
+h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
+.sub{color:#8b95a9;margin:0 0 18px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{background:#141824;border:1px solid #232a3b;border-radius:16px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:118px}
+.card:active{transform:scale(.97);background:#1a2030}
+.card .ic{font-size:30px}
+.card b{font-size:16px}
+.card span.d{color:#8b95a9;font-size:12.5px}
+.tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:99px;background:#1f2a44;color:#9db7ff;margin-top:auto;align-self:flex-start}
+.tag.on{background:#183a2c;color:#7ee2ae}
+.tag.warn{background:#3a2d18;color:#f0c27a}
+.note{margin:22px 0 0;padding:12px 14px;background:#10141f;border:1px solid #1f2637;border-radius:12px;color:#97a2b8;font-size:13px}
+.note b{color:#cfd7e6}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:20}
+#sheet.open{display:flex}
+#sheet .in{width:100%;max-height:88%;overflow:auto;background:#121621;border-radius:20px 20px 0 0;padding:18px 16px max(22px,env(safe-area-inset-bottom));border-top:1px solid #2a3248}
+#sheet h2{margin:0 0 4px;font-size:20px}
+.row{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.row label{font-size:12.5px;color:#8b95a9}
+.row select,.row input[type=text]{background:#0b0d12;border:1px solid #2a3248;border-radius:10px;padding:10px;width:100%}
+.file{display:flex;align-items:center;gap:10px;background:#0b0d12;border:1px dashed #36405a;border-radius:10px;padding:10px}
+.file input{flex:1;min-width:0;font-size:13px}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;border:0;border-radius:12px;padding:13px;font-weight:600;background:#2b6cff;color:#fff;cursor:pointer}
+.btn.alt{background:#222a3d;color:#dbe3f5}
+.btn:disabled{opacity:.4}
+#run{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
+#run.on{display:flex}
+#top,#keys{display:flex;gap:6px;padding:6px;background:#0f121a;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+#top{padding-top:max(6px,env(safe-area-inset-top))}
+#keys{padding-bottom:max(6px,env(safe-area-inset-bottom))}
+#top::-webkit-scrollbar,#keys::-webkit-scrollbar{display:none}
+.k{flex:0 0 auto;min-width:42px;height:38px;padding:0 11px;border:1px solid #2a3248;border-radius:9px;background:#1a2030;font-size:13.5px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.k:active{background:#2b6cff}
+.k.on{background:#2b6cff;border-color:#2b6cff}
+#title{flex:1;align-self:center;font-size:13px;color:#8b95a9;padding:0 8px;white-space:nowrap}
+#stage{position:relative;flex:1;min-height:0;overflow:hidden;background:#000;touch-action:none}
+#screen{position:absolute;left:0;top:0;transform-origin:0 0;image-rendering:pixelated}
+#screen canvas{image-rendering:pixelated}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.82);text-align:center;padding:24px;z-index:5}
+#ov.hide{display:none}
+.bar{width:min(320px,80%);height:6px;background:#222a3d;border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#2b6cff;transition:width .2s}
+#ta{position:fixed;left:-100px;top:0;width:40px;height:40px;opacity:0;font-size:16px}
+#mac{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
+#mac.on{display:flex}
+#mac iframe{flex:1;border:0;width:100%;background:#fff}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222a3d;padding:9px 14px;border-radius:99px;font-size:13px;z-index:50;display:none}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+
+<div id="home">
+  <h1>PC Launcher</h1>
+  <p class="sub">Pick an OS. It runs on a real x86 PC emulator right on your phone.</p>
+  <div class="grid" id="grid"></div>
+  <div class="note"><b>Be realistic:</b> this is a software PC inside a phone browser, so it is slow. Old systems (DOS, Windows 95/98, Linux, KolibriOS) run well. Modern Windows 10/11 and current macOS are not possible here. Games: DOS and Windows 9x era games work best.</div>
+</div>
+
+<div id="sheet"><div class="in" id="sheetIn"></div></div>
+
+<div id="run">
+  <div id="top">
+    <button class="k" id="bHome">✕ Exit</button>
+    <button class="k" id="bPause">⏸</button>
+    <button class="k" id="bKb">⌨ Keyboard</button>
+    <button class="k" id="bL">L-click</button>
+    <button class="k" id="bR">R-click</button>
+    <button class="k" id="bDrag">Drag</button>
+    <button class="k" id="bSave">💾 Save</button>
+    <button class="k" id="bFs">⛶</button>
+    <span id="title"></span>
+  </div>
+
+  <div id="stage">
+    <div id="screen">
+      <div style="white-space:pre;font:14px monospace;line-height:14px"></div>
+      <canvas style="display:none"></canvas>
+    </div>
+
+    <div id="ov">
+      <div id="ovT">Loading…</div>
+      <div class="bar"><i id="ovB"></i></div>
+      <div id="ovS" style="color:#8b95a9;font-size:12.5px"></div>
+    </div>
+  </div>
+
+  <div id="keys"></div>
+  <textarea id="ta" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+</div>
+
+<div id="mac">
+  <div id="top" style="display:flex">
+    <button class="k" id="mBack">✕ Exit</button>
+    <a class="k" id="mOpen" style="display:flex;align-items:center;text-decoration:none;color:inherit" target="_blank" rel="noopener">Open in browser ↗</a>
+    <span id="title">Classic Mac OS (online)</span>
+  </div>
+  <iframe id="mf" allow="cross-origin-isolated; autoplay; fullscreen; clipboard-write" referrerpolicy="no-referrer"></iframe>
+</div>
+
+<div id="toast"></div>
+
 <script>
-(function () {
-  var cv = document.getElementById('c'), x = cv.getContext('2d'), W, H, D;
-  function size() {
-    D = Math.min(window.devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    cv.width = W * D; cv.height = H * D;
-    x.setTransform(D, 0, 0, D, 0, 0);
+(()=>{
+'use strict';
+
+const $ = s => document.querySelector(s);
+
+const toast = (t, ms = 2600) => {
+  const e = $('#toast');
+  e.textContent = t;
+  e.style.display = 'block';
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => e.style.display = 'none', ms);
+};
+
+const HOST = 'https://i.copy.sh/';
+
+/* ---------- OS catalog ---------- */
+const OSES = [
+  {
+    id: 'linux',
+    name: 'Linux',
+    icon: '🐧',
+    d: 'Linux 6.8 (Buildroot). Console + tools.',
+    tag: 'downloads image',
+    mem: 256,
+    bz: HOST + 'buildroot-bzimage68.bin',
+    cmdline: 'tsc=reliable mitigations=off random.trust_cpu=on'
+  },
+  {
+    id: 'win95',
+    name: 'Windows 95',
+    icon: '🪟',
+    d: 'Full Windows 95 desktop. Plays Win9x & DOS games.',
+    tag: 'downloads image',
+    mem: 64,
+    hda: HOST + 'windows95.img',
+    big: true
+  },
+  {
+    id: 'win',
+    name: 'Windows (your ISO)',
+    icon: '💿',
+    d: 'Install 98 / ME / 2000 / XP from your own ISO.',
+    tag: 'needs your ISO',
+    mem: 512,
+    custom: true,
+    blank: true
+  },
+  {
+    id: 'mac',
+    name: 'Mac OS Classic',
+    icon: '🍎',
+    d: 'System 1 to Mac OS 9 (68k/PPC). Online only.',
+    tag: 'online',
+    mac: true
+  },
+  {
+    id: 'dos',
+    name: 'DOS (FreeDOS)',
+    icon: '⌨️',
+    d: 'Boots FreeDOS. Attach a game disk to play.',
+    tag: 'games',
+    mem: 32,
+    fda: HOST + 'freedos722.img'
+  },
+  {
+    id: 'kolibri',
+    name: 'KolibriOS',
+    icon: '🕊️',
+    d: 'Tiny fast desktop OS with built-in apps.',
+    tag: 'downloads image',
+    mem: 64,
+    fda: HOST + 'kolibri.img'
+  },
+  {
+    id: 'custom',
+    name: 'Any ISO / IMG',
+    icon: '🛠️',
+    d: 'Boot anything: Debian, Alpine, TinyCore, ReactOS, Haiku, BSD…',
+    tag: 'your file',
+    mem: 512,
+    custom: true,
+    blank: true
   }
-  addEventListener('resize', size); size();
+];
 
-  // ---- state ----
-  var best = 0;
-  try { best = +localStorage.getItem('neon_dodge_best') || 0; } catch (e) {}
-  var state = 'menu', score = 0, lives = 3, diff = 1, hurt = 0, shake = 0, spawnT = 0, coinT = 2, overAt = 0, newBest = false, tm = 0;
-  var P = { x: 0, y: 0, tx: 0, ty: 0, r: 14 };
-  var en = [], co = [], pa = [], stars = [];
-  for (var i = 0; i < 70; i++) stars.push({ x: Math.random(), y: Math.random(), s: Math.random() * 1.5 + 0.3, v: Math.random() * 40 + 10 });
+/* ---------- state ---------- */
+let emu = null;
+let cur = null;
+let paused = false;
+let E = null;
+let wake = null;
+let heldLeft = false;
 
-  // ---- helpers ----
-  var rnd = Math.random;
-  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-  var AC = null;
-  function beep(f, d, type, vol) {
+const files = {
+  boot: null,
+  game: null
+};
+
+/* ---------- IndexedDB ---------- */
+const idb = () => new Promise((res, rej) => {
+  const r = indexedDB.open('pclauncher', 1);
+
+  r.onupgradeneeded = () => r.result.createObjectStore('s');
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+
+const idbGet = async k => {
+  const d = await idb();
+
+  return new Promise((res, rej) => {
+    const q = d.transaction('s').objectStore('s').get(k);
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+};
+
+const idbPut = async (k, v) => {
+  const d = await idb();
+
+  return new Promise((res, rej) => {
+    const t = d.transaction('s', 'readwrite');
+    t.objectStore('s').put(v, k);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+const hasState = async k => {
+  try {
+    return !!(await idbGet(k));
+  } catch (e) {
+    return false;
+  }
+};
+
+/* ---------- home screen ---------- */
+async function renderGrid() {
+  const g = $('#grid');
+  const states = await Promise.all(OSES.map(o => hasState(o.id)));
+
+  g.innerHTML = '';
+
+  OSES.forEach((o, i) => {
+    const saved = states[i];
+    const b = document.createElement('button');
+
+    b.className = 'card';
+    b.innerHTML = `
+      <div class="ic">${o.icon}</div>
+      <b>${o.name}</b>
+      <span class="d">${o.d}</span>
+      <span class="tag ${saved ? 'on' : (o.mac ? 'warn' : '')}">
+        ${saved ? 'saved state' : o.tag}
+      </span>
+    `;
+
+    b.onclick = () => openSheet(o);
+    g.appendChild(b);
+  });
+}
+
+function openSheet(o) {
+  if (o.mac) return openMac();
+
+  files.boot = null;
+  files.game = null;
+
+  const s = $('#sheetIn');
+
+  const ramOptions = [32, 64, 128, 256, 512, 1024, 2048]
+    .map(m => `<option value="${m}" ${m === o.mem ? 'selected' : ''}>${m >= 1024 ? (m / 1024) + ' GB' : m + ' MB'}</option>`)
+    .join('');
+
+  s.innerHTML = `
+    <h2>${o.icon} ${o.name}</h2>
+    <div style="color:#8b95a9;font-size:13.5px">${o.d}</div>
+
+    ${o.custom ? `
+      <div class="row">
+        <label>${o.id === 'win' ? 'Windows install disc / disk (.iso, .img)' : 'Boot disc / disk (.iso, .img)'} *</label>
+        <div class="file">
+          <input type="file" id="fBoot" accept=".iso,.img,.ima,.vfd,.flp,.bin,.hdd,.vhd">
+        </div>
+      </div>
+    ` : ''}
+
+    ${o.blank ? `
+      <div class="row">
+        <label>Blank hard disk (for installing an OS onto)</label>
+        <select id="blank">
+          <option value="0">None</option>
+          <option value="268435456">256 MB</option>
+          <option value="536870912" selected>512 MB</option>
+          <option value="1073741824">1 GB</option>
+        </select>
+      </div>
+    ` : ''}
+
+    <div class="row">
+      <label>Game / extra disk (optional): .iso as CD-ROM, small .img as floppy, big .img as second hard disk</label>
+      <div class="file">
+        <input type="file" id="fGame" accept=".iso,.img,.ima,.vfd,.flp,.bin,.hdd,.vhd">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Memory for the virtual PC. Windows 95/98/ME can crash above 512 MB.</label>
+      <select id="ram">${ramOptions}</select>
+    </div>
+
+    <div class="btns">
+      <button class="btn alt" id="sCancel">Cancel</button>
+      <button class="btn" id="sBoot">Boot</button>
+    </div>
+
+    <div class="btns" id="resumeRow" style="display:none">
+      <button class="btn alt" id="sResume">Resume saved state</button>
+    </div>
+  `;
+
+  $('#sheet').classList.add('open');
+
+  const fb = $('#fBoot');
+  if (fb) fb.onchange = () => files.boot = fb.files[0] || null;
+
+  $('#fGame').onchange = e => files.game = e.target.files[0] || null;
+  $('#sCancel').onclick = closeSheet;
+
+  $('#sBoot').onclick = () => {
+    if (o.custom && !files.boot && !(o.id === 'custom' && files.game)) {
+      toast('Pick a boot disc / disk first');
+      return;
+    }
+
+    const blank = $('#blank') ? +$('#blank').value : 0;
+    const ram = +$('#ram').value;
+
+    closeSheet();
+    boot(o, { ram, blank, resume: false });
+  };
+
+  hasState(o.id).then(h => {
+    if (!h) return;
+
+    $('#resumeRow').style.display = 'flex';
+
+    $('#sResume').onclick = () => {
+      if (o.custom && !files.boot) {
+        toast('Pick the same boot disk again to resume');
+        return;
+      }
+
+      const blank = $('#blank') ? +$('#blank').value : 0;
+      const ram = +$('#ram').value;
+
+      closeSheet();
+      boot(o, { ram, blank, resume: true });
+    };
+  });
+}
+
+const closeSheet = () => $('#sheet').classList.remove('open');
+
+$('#sheet').addEventListener('click', e => {
+  if (e.target.id === 'sheet') closeSheet();
+});
+
+/* ---------- Mac ---------- */
+function openMac() {
+  const url = 'https://infinitemac.org/';
+
+  $('#mf').src = url;
+  $('#mOpen').href = url;
+  $('#mac').classList.add('on');
+}
+
+$('#mBack').onclick = () => {
+  $('#mac').classList.remove('on');
+  $('#mf').src = 'about:blank';
+};
+
+/* ---------- emulator engine ---------- */
+function loadEngine() {
+  return E || (E = new Promise((res, rej) => {
+    const V = 'https://cdn.jsdelivr.net/npm/v86@0.5.473/build/';
+
+    const urls = {
+      wasm: V + 'v86.wasm',
+      bios: 'https://cdn.jsdelivr.net/gh/copy/v86@master/bios/seabios.bin',
+      vga: 'https://cdn.jsdelivr.net/gh/copy/v86@master/bios/vgabios.bin'
+    };
+
+    const s = document.createElement('script');
+    s.src = V + 'libv86.js';
+
+    s.onload = () => window.V86 ? res(urls) : rej(new Error('Engine did not initialise'));
+    s.onerror = () => rej(new Error('Engine failed to load. Check your internet connection.'));
+
+    document.head.appendChild(s);
+  }));
+}
+
+async function remoteImg(url, big) {
+  let size = 0;
+  let ranges = false;
+
+  try {
+    const r = await fetch(url, { method: 'HEAD' });
+
+    if (r.ok) {
+      size = +r.headers.get('content-length') || 0;
+      ranges = /bytes/i.test(r.headers.get('accept-ranges') || '');
+    }
+  } catch (e) {}
+
+  if (big && size > 0 && ranges) {
+    return { url, async: true, size };
+  }
+
+  return { url };
+}
+
+function classify(f) {
+  const n = f.name.toLowerCase();
+
+  if (n.endsWith('.iso')) return 'cdrom';
+  if (f.size <= 3000000 || /\.(vfd|flp|ima)$/.test(n)) return 'fd';
+  return 'hd';
+}
+
+function resetScreen() {
+  const sc = $('#screen');
+
+  sc.innerHTML = `
+    <div style="white-space:pre;font:14px monospace;line-height:14px"></div>
+    <canvas style="display:none"></canvas>
+  `;
+
+  sc.style.transform = '';
+  sc.style.width = '';
+  sc.style.height = '';
+}
+
+function ov(t, s, p) {
+  $('#ov').classList.remove('hide');
+  $('#ovT').textContent = t;
+  $('#ovS').textContent = s || '';
+  $('#ovB').style.width = (p == null ? 0 : p) + '%';
+}
+
+async function boot(o, opt) {
+  cur = o;
+  paused = false;
+  $('#bPause').textContent = '⏸';
+
+  $('#run').classList.add('on');
+  $('#title').textContent = o.name;
+
+  resetScreen();
+  ov('Starting engine…', '', 5);
+
+  try {
+    const urls = await loadEngine();
+
+    const cfg = {
+      wasm_path: urls.wasm,
+      bios: { url: urls.bios },
+      vga_bios: { url: urls.vga },
+
+      memory_size: opt.ram * 1048576,
+      vga_memory_size: 32 * 1048576,
+
+      screen_container: $('#screen'),
+      autostart: true,
+
+      /* IMPORTANT: keyboard must stay enabled for typing */
+      disable_keyboard: false,
+      disable_mouse: true,
+
+      fastboot: true
+    };
+
+    let usedCd = false;
+    let usedFda = false;
+    let usedHda = false;
+
+    if (o.bz) {
+      ov('Downloading kernel…', '', 10);
+      cfg.bzimage = await remoteImg(o.bz);
+      cfg.cmdline = o.cmdline;
+    }
+
+    if (o.hda) {
+      ov('Checking disk image…', '', 10);
+      cfg.hda = await remoteImg(o.hda, o.big);
+      usedHda = true;
+    }
+
+    if (o.fda) {
+      ov('Downloading disk…', '', 10);
+      cfg.fda = await remoteImg(o.fda);
+      usedFda = true;
+    }
+
+    if (files.boot) {
+      const k = classify(files.boot);
+
+      if (k === 'cdrom') {
+        cfg.cdrom = { buffer: files.boot };
+        usedCd = true;
+      } else if (k === 'fd') {
+        cfg.fda = { buffer: await files.boot.arrayBuffer() };
+        usedFda = true;
+      } else {
+        cfg.hda = { buffer: files.boot };
+        usedHda = true;
+      }
+    }
+
+    if (opt.blank > 0 && !usedHda) {
+      cfg.hda = { buffer: new ArrayBuffer(opt.blank) };
+      usedHda = true;
+    }
+
+    if (files.game) {
+      const k = classify(files.game);
+
+      if (k === 'cdrom' && !usedCd) {
+        cfg.cdrom = { buffer: files.game };
+        usedCd = true;
+      } else if (k === 'fd' && !usedFda) {
+        cfg.fda = { buffer: await files.game.arrayBuffer() };
+        usedFda = true;
+      } else if (k === 'fd') {
+        cfg.fdb = { buffer: await files.game.arrayBuffer() };
+      } else if (k === 'hd') {
+        if (!usedHda) {
+          cfg.hda = { buffer: files.game };
+          usedHda = true;
+        } else {
+          cfg.hdb = { buffer: files.game };
+        }
+      } else {
+        toast('CD slot already used: use a .img for the game');
+      }
+    }
+
+    if (!cfg.hda && !cfg.fda && !cfg.cdrom && !cfg.bzimage) {
+      throw new Error('Nothing to boot');
+    }
+
+    if (opt.resume) {
+      const st = await idbGet(o.id);
+
+      if (st) {
+        cfg.initial_state = { buffer: st };
+      } else {
+        toast('No saved state found, booting fresh');
+      }
+    }
+
+    ov('Booting…', '', 20);
+
+    emu = new V86(cfg);
+
+    /* Make sure the keyboard adapter is active */
     try {
-      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-      var o = AC.createOscillator(), g = AC.createGain();
-      o.type = type || 'square'; o.frequency.value = f;
-      g.gain.value = vol || 0.05;
-      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + d);
-      o.connect(g); g.connect(AC.destination);
-      o.start(); o.stop(AC.currentTime + d);
+      if (emu.keyboard_set_enabled) emu.keyboard_set_enabled(true);
+    } catch (e) {}
+
+    emu.add_listener('download-progress', e => {
+      let p = null;
+
+      if (e.total) p = Math.floor(e.loaded / e.total * 100);
+
+      const mb = e.loaded ? (e.loaded / 1048576).toFixed(1) + ' MB' : '';
+
+      ov(
+        'Downloading ' + (e.file_name || '').split('/').pop(),
+        mb + (p != null ? ' · ' + p + '%' : ''),
+        p == null ? 30 : p
+      );
+    });
+
+    emu.add_listener('download-error', e => {
+      ov(
+        'Download failed',
+        'Check your connection, or load your own image file instead. ' +
+        (e && e.file_name ? e.file_name : ''),
+        0
+      );
+    });
+
+    emu.add_listener('emulator-started', () => {
+      setTimeout(() => $('#ov').classList.add('hide'), 700);
+    });
+
+    emu.add_listener('screen-set-mode', () => {
+      $('#ov').classList.add('hide');
+    });
+
+    try {
+      wake = await navigator.wakeLock?.request('screen');
+    } catch (e) {}
+
+  } catch (err) {
+    ov('Could not start', String(err && err.message || err), 0);
+  }
+}
+
+async function stopEmu() {
+  try {
+    if (emu) {
+      if (emu.destroy) await emu.destroy();
+      else await emu.stop();
+    }
+  } catch (e) {}
+
+  emu = null;
+
+  try {
+    wake && wake.release();
+  } catch (e) {}
+
+  wake = null;
+  heldLeft = false;
+
+  $('#bDrag').classList.remove('on');
+  resetScreen();
+}
+
+$('#bHome').onclick = async () => {
+  if (emu && !confirm('Exit? Unsaved progress will be lost (use Save first).')) return;
+
+  await stopEmu();
+  $('#run').classList.remove('on');
+  renderGrid();
+};
+
+$('#bPause').onclick = async () => {
+  if (!emu) return;
+
+  if (paused) {
+    await emu.run();
+    paused = false;
+    $('#bPause').textContent = '⏸';
+  } else {
+    await emu.stop();
+    paused = true;
+    $('#bPause').textContent = '▶';
+  }
+};
+
+$('#bSave').onclick = async () => {
+  if (!emu || !cur) return;
+
+  try {
+    toast('Saving…');
+
+    const st = await emu.save_state();
+    await idbPut(cur.id, st);
+
+    toast('Saved (' + (st.byteLength / 1048576).toFixed(0) + ' MB)');
+  } catch (e) {
+    toast('Save failed: ' + (e.message || e), 4000);
+  }
+};
+
+$('#bFs').onclick = () => {
+  const d = document;
+
+  if (d.fullscreenElement) {
+    d.exitFullscreen();
+  } else {
+    d.documentElement.requestFullscreen?.()
+      .then(() => screen.orientation?.lock?.('landscape').catch(() => {}))
+      .catch(() => {});
+  }
+};
+
+/* ---------- screen scaling ---------- */
+function fit() {
+  const box = $('#stage');
+  const sc = $('#screen');
+
+  if (!box || !emu) return;
+
+  const cv = sc.querySelector('canvas');
+  const tx = sc.firstElementChild;
+
+  let w, h;
+
+  if (cv && cv.style.display !== 'none' && cv.width > 1) {
+    w = cv.offsetWidth || cv.width;
+    h = cv.offsetHeight || cv.height;
+  } else {
+    w = tx.scrollWidth;
+    h = tx.scrollHeight;
+  }
+
+  if (!w || !h) return;
+
+  const s = Math.min(box.clientWidth / w, box.clientHeight / h);
+
+  sc.style.width = w + 'px';
+  sc.style.height = h + 'px';
+  sc.style.transform = `scale(${s})`;
+  sc.style.left = Math.max(0, (box.clientWidth - w * s) / 2) + 'px';
+  sc.style.top = Math.max(0, (box.clientHeight - h * s) / 2) + 'px';
+}
+
+setInterval(fit, 400);
+addEventListener('resize', fit);
+
+/* ---------- touch mouse ---------- */
+const stage = $('#stage');
+let sens = 1.7;
+
+let tch = {};
+let startT = 0;
+let moved = 0;
+let lastTapEnd = 0;
+let fingers = 0;
+let accX = 0;
+let accY = 0;
+let twoMoved = false;
+let dragTap = false;
+
+const click = (l, m, r) => emu && emu.bus.send('mouse-click', [l, m, r]);
+
+const resumeAudio = () => {
+  try {
+    const a = emu && emu.speaker_adapter && emu.speaker_adapter.audio_context;
+    a && a.state !== 'running' && a.resume();
+  } catch (e) {}
+};
+
+stage.addEventListener('touchstart', e => {
+  if (!emu) return;
+
+  resumeAudio();
+
+  for (const t of e.changedTouches) {
+    tch[t.identifier] = { x: t.clientX, y: t.clientY };
+  }
+
+  fingers = Object.keys(tch).length;
+
+  if (fingers === 1) {
+    startT = Date.now();
+    moved = 0;
+    twoMoved = false;
+
+    if (Date.now() - lastTapEnd < 280) {
+      dragTap = true;
+      click(true, false, false);
+    } else {
+      dragTap = false;
+    }
+  }
+
+  if (fingers === 2) {
+    twoMoved = false;
+    startT = Date.now();
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchmove', e => {
+  if (!emu) return;
+
+  if (fingers >= 2) {
+    let dy = 0;
+
+    for (const t of e.changedTouches) {
+      const p = tch[t.identifier];
+
+      if (p) {
+        dy += t.clientY - p.y;
+        p.x = t.clientX;
+        p.y = t.clientY;
+      }
+    }
+
+    if (Math.abs(dy) > 0) {
+      twoMoved = true;
+
+      emu.bus.send('mouse-wheel', [
+        Math.sign(dy) * Math.min(3, Math.ceil(Math.abs(dy) / 8)),
+        0
+      ]);
+    }
+  } else {
+    for (const t of e.changedTouches) {
+      const p = tch[t.identifier];
+      if (!p) continue;
+
+      const dx = (t.clientX - p.x) * sens;
+      const dy = (t.clientY - p.y) * sens;
+
+      p.x = t.clientX;
+      p.y = t.clientY;
+      moved += Math.abs(dx) + Math.abs(dy);
+
+      accX += dx;
+      accY += dy;
+
+      const ix = Math.trunc(accX);
+      const iy = Math.trunc(accY);
+
+      accX -= ix;
+      accY -= iy;
+
+      if (ix || iy) emu.bus.send('mouse-delta', [ix, -iy]);
+    }
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchend', e => {
+  if (!emu) return;
+
+  const wasFingers = fingers;
+
+  for (const t of e.changedTouches) {
+    delete tch[t.identifier];
+  }
+
+  fingers = Object.keys(tch).length;
+  const dt = Date.now() - startT;
+
+  if (wasFingers === 1 && fingers === 0) {
+    if (dragTap && !heldLeft) {
+      click(false, false, false);
+    } else if (moved < 12 && dt < 300 && !heldLeft) {
+      click(true, false, false);
+      setTimeout(() => click(false, false, false), 40);
+    } else if (heldLeft && moved < 12 && dt < 300) {
+      click(false, false, false);
+      heldLeft = false;
+      $('#bDrag').classList.remove('on');
+    }
+
+    lastTapEnd = Date.now();
+  }
+
+  if (wasFingers === 2 && fingers === 0 && !twoMoved && dt < 350) {
+    click(false, false, true);
+    setTimeout(() => click(false, false, false), 40);
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchcancel', () => {
+  tch = {};
+  fingers = 0;
+});
+
+$('#bL').onclick = () => {
+  click(true, false, false);
+  setTimeout(() => click(false, false, false), 50);
+};
+
+$('#bR').onclick = () => {
+  click(false, false, true);
+  setTimeout(() => click(false, false, false), 50);
+};
+
+$('#bDrag').onclick = () => {
+  heldLeft = !heldLeft;
+
+  click(heldLeft, false, false);
+  $('#bDrag').classList.toggle('on', heldLeft);
+
+  toast(heldLeft ? 'Left button held: move finger, tap to release' : 'Released');
+};
+
+/* ---------- keyboard scancodes ---------- */
+const SC = {
+  Escape: [1],
+  Digit1: [2],
+  Digit2: [3],
+  Digit3: [4],
+  Digit4: [5],
+  Digit5: [6],
+  Digit6: [7],
+  Digit7: [8],
+  Digit8: [9],
+  Digit9: [10],
+  Digit0: [11],
+  Minus: [12],
+  Equal: [13],
+  Backspace: [14],
+  Tab: [15],
+
+  KeyQ: [16],
+  KeyW: [17],
+  KeyE: [18],
+  KeyR: [19],
+  KeyT: [20],
+  KeyY: [21],
+  KeyU: [22],
+  KeyI: [23],
+  KeyO: [24],
+  KeyP: [25],
+  BracketLeft: [26],
+  BracketRight: [27],
+  Enter: [28],
+  ControlLeft: [29],
+
+  KeyA: [30],
+  KeyS: [31],
+  KeyD: [32],
+  KeyF: [33],
+  KeyG: [34],
+  KeyH: [35],
+  KeyJ: [36],
+  KeyK: [37],
+  KeyL: [38],
+  Semicolon: [39],
+  Quote: [40],
+  Backquote: [41],
+  ShiftLeft: [42],
+  Backslash: [43],
+
+  KeyZ: [44],
+  KeyX: [45],
+  KeyC: [46],
+  KeyV: [47],
+  KeyB: [48],
+  KeyN: [49],
+  KeyM: [50],
+  Comma: [51],
+  Period: [52],
+  Slash: [53],
+  ShiftRight: [54],
+  NumpadMultiply: [55],
+  AltLeft: [56],
+  Space: [57],
+  CapsLock: [58],
+
+  F1: [59],
+  F2: [60],
+  F3: [61],
+  F4: [62],
+  F5: [63],
+  F6: [64],
+  F7: [65],
+  F8: [66],
+  F9: [67],
+  F10: [68],
+  NumLock: [69],
+  ScrollLock: [70],
+
+  Numpad7: [71],
+  Numpad8: [72],
+  Numpad9: [73],
+  NumpadSubtract: [74],
+  Numpad4: [75],
+  Numpad5: [76],
+  Numpad6: [77],
+  NumpadAdd: [78],
+  Numpad1: [79],
+  Numpad2: [80],
+  Numpad3: [81],
+  Numpad0: [82],
+  NumpadDecimal: [83],
+
+  F11: [87],
+  F12: [88],
+
+  ControlRight: [0xE0, 29],
+  AltRight: [0xE0, 56],
+  NumpadEnter: [0xE0, 28],
+  NumpadDivide: [0xE0, 53],
+  Home: [0xE0, 71],
+  ArrowUp: [0xE0, 72],
+  PageUp: [0xE0, 73],
+  ArrowLeft: [0xE0, 75],
+  ArrowRight: [0xE0, 77],
+  End: [0xE0, 79],
+  ArrowDown: [0xE0, 80],
+  PageDown: [0xE0, 81],
+  Insert: [0xE0, 82],
+  Delete: [0xE0, 83],
+  MetaLeft: [0xE0, 91],
+  MetaRight: [0xE0, 92],
+  ContextMenu: [0xE0, 93]
+};
+
+const make = c => {
+  const s = SC[c];
+  return s ? s.slice() : null;
+};
+
+const brk = c => {
+  const s = SC[c];
+  if (!s) return null;
+
+  const r = s.slice();
+  r[r.length - 1] |= 0x80;
+
+  return r;
+};
+
+const mods = {
+  ControlLeft: false,
+  AltLeft: false,
+  ShiftLeft: false
+};
+
+/* Keys already sent by keydown; prevents duplicate letters */
+const physicalDown = new Set();
+
+function sendMake(code) {
+  const seq = make(code);
+  if (seq && emu) emu.keyboard_send_scancodes(seq);
+}
+
+function sendBreak(code) {
+  const seq = brk(code);
+  if (seq && emu) emu.keyboard_send_scancodes(seq);
+}
+
+function releaseAllMods() {
+  for (const code of Object.keys(mods)) {
+    if (mods[code]) {
+      sendBreak(code);
+      mods[code] = false;
+
+      const btn = document.querySelector(`[data-mod="${code}"]`);
+      if (btn) btn.classList.remove('on');
+    }
+  }
+}
+
+function tap(code) {
+  sendMake(code);
+
+  setTimeout(() => {
+    sendBreak(code);
+
+    /* Release one-shot Ctrl / Alt; keep Shift held if user is holding it */
+    if (mods.ControlLeft || mods.AltLeft) releaseAllMods();
+  }, 40);
+}
+
+function char2code(ch) {
+  if (/[a-z]/i.test(ch)) {
+    return {
+      c: 'Key' + ch.toUpperCase(),
+      sh: ch !== ch.toLowerCase()
+    };
+  }
+
+  if (/[0-9]/.test(ch)) {
+    return { c: 'Digit' + ch };
+  }
+
+  return null;
+}
+
+function typeText(text) {
+  if (!emu || !text) return;
+
+  /* Ctrl / Alt are shortcut modifiers, not normal typing */
+  if (mods.ControlLeft || mods.AltLeft) {
+    for (const ch of text) {
+      const mapped = char2code(ch);
+
+      if (mapped) tap(mapped.c);
+    }
+
+    releaseAllMods();
+    return;
+  }
+
+  /* This is the path that types normal letters into DOS, Linux, Windows, etc. */
+  emu.keyboard_send_text(text);
+
+  releaseAllMods();
+}
+
+/* ---------- on-screen keyboard ---------- */
+const KB = [
+  ['Esc', 'Escape'],
+  ['Tab', 'Tab'],
+  ['Ctrl', 'ControlLeft', 'mod'],
+  ['Alt', 'AltLeft', 'mod'],
+  ['Shift', 'ShiftLeft', 'mod'],
+  ['⌫', 'Backspace'],
+  ['↵', 'Enter'],
+  ['Space', 'Space'],
+
+  ['←', 'ArrowLeft'],
+  ['↑', 'ArrowUp'],
+  ['↓', 'ArrowDown'],
+  ['→', 'ArrowRight'],
+  ['Del', 'Delete'],
+  ['Home', 'Home'],
+  ['End', 'End'],
+  ['PgUp', 'PageUp'],
+  ['PgDn', 'PageDown'],
+  ['Win', 'MetaLeft'],
+
+  ['F1', 'F1'],
+  ['F2', 'F2'],
+  ['F3', 'F3'],
+  ['F4', 'F4'],
+  ['F5', 'F5'],
+  ['F6', 'F6'],
+  ['F7', 'F7'],
+  ['F8', 'F8'],
+  ['F9', 'F9'],
+  ['F10', 'F10'],
+  ['F11', 'F11'],
+  ['F12', 'F12'],
+  ['Ctrl+Alt+Del', 'cad']
+];
+
+const kb = $('#keys');
+
+for (const [label, code, type] of KB) {
+  const b = document.createElement('button');
+  b.className = 'k';
+  b.textContent = label;
+
+  b.addEventListener('pointerdown', e => e.preventDefault());
+
+  b.onclick = () => {
+    if (!emu) return;
+
+    if (code === 'cad') {
+      const seq = ['ControlLeft', 'AltLeft', 'Delete'];
+
+      seq.forEach(sendMake);
+
+      setTimeout(() => {
+        seq.slice().reverse().forEach(sendBreak);
+      }, 80);
+
+      return;
+    }
+
+    if (type === 'mod') {
+      mods[code] = !mods[code];
+
+      if (mods[code]) sendMake(code);
+      else sendBreak(code);
+
+      b.classList.toggle('on', mods[code]);
+      b.dataset.mod = code;
+
+      return;
+    }
+
+    tap(code);
+  };
+
+  kb.appendChild(b);
+}
+
+/* ---------- Android soft keyboard ---------- */
+const ta = $('#ta');
+
+$('#bKb').onclick = () => {
+  ta.value = '';
+  ta.focus();
+};
+
+ta.addEventListener('keydown', e => {
+  if (!emu) return;
+
+  /* Do not break Android autocorrect, swipe typing, or emoji input */
+  if (e.isComposing || e.keyCode === 229) return;
+
+  /* Let the browser handle copy / paste / select-all locally */
+  if (e.ctrlKey || e.metaKey) return;
+
+  if (SC[e.code]) {
+    if (!physicalDown.has(e.code)) {
+      physicalDown.add(e.code);
+      sendMake(e.code);
+    }
+
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('keyup', e => {
+  if (!emu) return;
+
+  if (e.isComposing || e.keyCode === 229) return;
+
+  if (SC[e.code]) {
+    physicalDown.delete(e.code);
+    sendBreak(e.code);
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('beforeinput', e => {
+  if (!emu) return;
+
+  if (e.inputType === 'deleteContentBackward') {
+    tap('Backspace');
+    e.preventDefault();
+    return;
+  }
+
+  if (e.inputType === 'insertLineBreak') {
+    tap('Enter');
+    e.preventDefault();
+    return;
+  }
+
+  if (e.data) {
+    typeText(e.data);
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('input', () => {
+  /* Text is handled in beforeinput; keep hidden textarea empty */
+  if (ta.value) ta.value = '';
+});
+
+/* ---------- Bluetooth / physical keyboard ---------- */
+addEventListener('keydown', e => {
+  if (!emu || !$('#run').classList.contains('on') || e.target === ta) return;
+
+  if (e.repeat && physicalDown.has(e.code)) {
+    e.preventDefault();
+    return;
+  }
+
+  if (SC[e.code]) {
+    if (!physicalDown.has(e.code)) {
+      physicalDown.add(e.code);
+      sendMake(e.code);
+    }
+
+    e.preventDefault();
+  }
+});
+
+addEventListener('keyup', e => {
+  if (!emu || !$('#run').classList.contains('on') || e.target === ta) return;
+
+  if (SC[e.code]) {
+    physicalDown.delete(e.code);
+    sendBreak(e.code);
+    e.preventDefault();
+  }
+});
+
+/* Prevent stuck keys when browser loses focus */
+addEventListener('blur', () => {
+  for (const code of Array.from(physicalDown)) {
+    sendBreak(code);
+  }
+
+  physicalDown.clear();
+  releaseAllMods();
+});
+
+renderGrid();
+
+window.__pc = {
+  get emu() { return emu; },
+  boot,
+  OSES,
+  files
+};
+
+})();
+</script>
+</body>
+</html>
