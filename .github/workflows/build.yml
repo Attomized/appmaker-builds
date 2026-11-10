@@ -1,0 +1,49 @@
+name: Build APK
+on:
+  push:
+    branches: [main, master]
+    paths: ['app.properties']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Signing key (created once, so updates install over old versions)
+        run: |
+          if [ ! -f keystore.jks ]; then
+            keytool -genkeypair -keystore keystore.jks -storepass appmaker -keypass appmaker -alias appmaker -keyalg RSA -keysize 2048 -validity 36500 -dname "CN=App Maker"
+            git config user.name "app-maker"
+            git config user.email "app-maker@users.noreply.github.com"
+            git add keystore.jks
+            git commit -m "Add signing key [skip ci]"
+            git push
+          fi
+      - name: Build
+        run: gradle --no-daemon assembleRelease
+      - name: Package
+        id: meta
+        run: |
+          APP_ID=$(grep '^APP_ID=' app.properties | cut -d= -f2-)
+          SLUG=$(grep '^SLUG=' app.properties | cut -d= -f2-)
+          NAME=$(grep '^APP_NAME=' app.properties | cut -d= -f2-)
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/$SLUG.apk"
+          echo "tag=$APP_ID-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          files: out/*.apk
+          make_latest: false

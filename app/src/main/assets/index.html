@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Neon Dodge</title>
+<style>
+html,body{margin:0;height:100%;background:#07071a;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function () {
+  var cv = document.getElementById('c'), x = cv.getContext('2d'), W, H, D;
+  function size() {
+    D = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * D; cv.height = H * D;
+    x.setTransform(D, 0, 0, D, 0, 0);
+  }
+  addEventListener('resize', size); size();
+
+  // ---- state ----
+  var best = 0;
+  try { best = +localStorage.getItem('neon_dodge_best') || 0; } catch (e) {}
+  var state = 'menu', score = 0, lives = 3, diff = 1, hurt = 0, shake = 0, spawnT = 0, coinT = 2, overAt = 0, newBest = false, tm = 0;
+  var P = { x: 0, y: 0, tx: 0, ty: 0, r: 14 };
+  var en = [], co = [], pa = [], stars = [];
+  for (var i = 0; i < 70; i++) stars.push({ x: Math.random(), y: Math.random(), s: Math.random() * 1.5 + 0.3, v: Math.random() * 40 + 10 });
+
+  // ---- helpers ----
+  var rnd = Math.random;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  var AC = null;
+  function beep(f, d, type, vol) {
+    try {
+      if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      var o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'square'; o.frequency.value = f;
+      g.gain.value = vol || 0.05;
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + d);
+      o.connect(g); g.connect(AC.destination);
+      o.start(); o.stop(AC.currentTime + d);

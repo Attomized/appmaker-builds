@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def props = new Properties()
+file('../app.properties').withReader('UTF-8') { props.load(it) }
+
+android {
+    namespace 'com.appmaker.shell'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId props.getProperty('APP_ID')
+        minSdk 24
+        targetSdk 34
+        versionCode props.getProperty('VERSION_CODE').toInteger()
+        versionName props.getProperty('VERSION_NAME')
+        manifestPlaceholders = [
+            appLabel: props.getProperty('APP_NAME'),
+            orient  : props.getProperty('ORIENT', 'unspecified'),
+            appTheme: props.getProperty('THEME', '@android:style/Theme.DeviceDefault.NoActionBar')
+        ]
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore.jks')
+            storePassword 'appmaker'
+            keyAlias 'appmaker'
+            keyPassword 'appmaker'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
