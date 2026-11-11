@@ -128,75 +128,48 @@ const toast = (t, ms = 2600) => {
 };
 
 const HOST = 'https://i.copy.sh/';
+const KB1 = 1024, MB = 1024 * 1024;
+const part = (path, size, cs) => ({ url: HOST + path, size, async: true, fixed_chunk_size: cs, use_parts: true });
+const file = (name, size) => ({ url: HOST + name, size, async: false });
 
-/* ---------- OS catalog ---------- */
+/* Image names/sizes copied from the v86 project's own OS list */
 const OSES = [
-  {
-    id: 'linux',
-    name: 'Linux',
-    icon: '🐧',
-    d: 'Linux 6.8 (Buildroot). Console + tools.',
-    tag: 'downloads image',
-    mem: 256,
-    bz: HOST + 'buildroot-bzimage68.bin',
-    cmdline: 'tsc=reliable mitigations=off random.trust_cpu=on'
-  },
-  {
-    id: 'win95',
-    name: 'Windows 95',
-    icon: '🪟',
-    d: 'Full Windows 95 desktop. Plays Win9x & DOS games.',
-    tag: 'downloads image',
-    mem: 64,
-    hda: HOST + 'windows95.img',
-    big: true
-  },
-  {
-    id: 'win',
-    name: 'Windows (your ISO)',
-    icon: '💿',
-    d: 'Install 98 / ME / 2000 / XP from your own ISO.',
-    tag: 'needs your ISO',
-    mem: 512,
-    custom: true,
-    blank: true
-  },
-  {
-    id: 'mac',
-    name: 'Mac OS Classic',
-    icon: '🍎',
-    d: 'System 1 to Mac OS 9 (68k/PPC). Online only.',
-    tag: 'online',
-    mac: true
-  },
-  {
-    id: 'dos',
-    name: 'DOS (FreeDOS)',
-    icon: '⌨️',
-    d: 'Boots FreeDOS. Attach a game disk to play.',
-    tag: 'games',
-    mem: 32,
-    fda: HOST + 'freedos722.img'
-  },
-  {
-    id: 'kolibri',
-    name: 'KolibriOS',
-    icon: '🕊️',
-    d: 'Tiny fast desktop OS with built-in apps.',
-    tag: 'downloads image',
-    mem: 64,
-    fda: HOST + 'kolibri.img'
-  },
-  {
-    id: 'custom',
-    name: 'Any ISO / IMG',
-    icon: '🛠️',
-    d: 'Boot anything: Debian, Alpine, TinyCore, ReactOS, Haiku, BSD…',
-    tag: 'your file',
-    mem: 512,
-    custom: true,
-    blank: true
-  }
+  { id: 'dsl', name: 'Linux Desktop (DSL)', icon: '🖥️', d: 'Damn Small Linux: real Linux desktop with mouse, browser, apps.',
+    tag: '52 MB', mem: 256, cdrom: file('dsl-4.11.rc2.iso', 52824064), autoEnter: true },
+  { id: 'tinycore', name: 'Linux Desktop (TinyCore)', icon: '🐧', d: 'Tiny Core Linux with a light desktop. Very small.',
+    tag: '20 MB', mem: 256, hda: file('TinyCore-11.0.iso', 19922944) },
+  { id: 'linux', name: 'Linux Terminal', icon: '⌨️', d: 'Buildroot Linux 6.8. Text terminal only, no desktop.',
+    tag: 'terminal only', mem: 256, bzimage: file('buildroot-bzimage68.bin', 10068480),
+    cmdline: 'tsc=reliable mitigations=off random.trust_cpu=on' },
+  { id: 'windows95', name: 'Windows 95', icon: '🪟', d: 'Full Windows 95 desktop. Win9x and DOS games.',
+    tag: 'streams disk', mem: 64, hda: part('windows95-v3/.img', 471859200, 256 * KB1) },
+  { id: 'windows98', name: 'Windows 98', icon: '🪟', d: 'Windows 98. Has an instant-start snapshot.',
+    tag: 'instant start', mem: 128, mac: true, hda: part('windows98/.img', 300 * MB, 256 * KB1),
+    state: { url: HOST + 'windows98_state-v2.bin.zst' } },
+  { id: 'windows2000', name: 'Windows 2000', icon: '🪟', d: 'Windows 2000. Has an instant-start snapshot.',
+    tag: 'instant start', mem: 512, mac: true, hda: part('windows2k-v2/.img', 2048 * MB, 256 * KB1),
+    state: { url: HOST + 'windows2k_state-v4.bin.zst' } },
+  { id: 'windows31', name: 'Windows 3.1', icon: '🪟', d: 'Windows 3.1 on DOS. Small and fast.',
+    tag: '34 MB', mem: 64, hda: file('win31.img', 34463744) },
+  { id: 'reactos', name: 'ReactOS', icon: '🧩', d: 'Open-source Windows clone. Runs some Windows apps.',
+    tag: 'instant start', mem: 512, mac: true, acpi: true, net: 'virtio', hda: part('reactos-v3/.img', 734003200, MB),
+    state: { url: HOST + 'reactos_state-v3.bin.zst' } },
+  { id: 'haiku', name: 'Haiku', icon: '🪶', d: 'BeOS-style desktop OS.',
+    tag: 'instant start', mem: 512, acpi: true, hda: part('haiku-v5/.img', 1342177280, MB),
+    state: { url: HOST + 'haiku_state-v5.bin.zst' } },
+  { id: 'mac', name: 'Mac OS Classic', icon: '🍎', d: 'System 1 to Mac OS 9 and OS X 10.4. Online only.',
+    tag: 'online', mac: true, macOnline: true },
+  { id: 'msdos', name: 'MS-DOS 6.22', icon: '💾', d: 'Real MS-DOS. Attach a game disk to play.',
+    tag: 'games', mem: 32, hda: part('msdos622/.img', 64 * MB, 256 * KB1) },
+  { id: 'freedos', name: 'FreeDOS', icon: '💾', d: 'FreeDOS floppy. Attach a game disk to play.',
+    tag: 'games', mem: 32, fda: file('freedos722.img', 737280) },
+  { id: 'kolibri', name: 'KolibriOS', icon: '🕊️', d: 'Tiny fast desktop OS with built-in apps and games.',
+    tag: 'tiny', mem: 64, fda: { url: 'https://builds.kolibrios.org/en_US/data/data/kolibri.img', size: 1474560 },
+    fdaFallback: file('kolibri.img', 1474560) },
+  { id: 'win', name: 'Windows (your ISO)', icon: '💿', d: 'Install 98 / ME / 2000 / XP from your own ISO.',
+    tag: 'needs your ISO', mem: 512, custom: true, blank: true },
+  { id: 'custom', name: 'Any ISO / IMG', icon: '🛠️', d: 'Boot anything you pick: Debian, Alpine, BSD, your own OS...',
+    tag: 'your file', mem: 512, custom: true, blank: true }
 ];
 
 /* ---------- state ---------- */
@@ -206,6 +179,7 @@ let paused = false;
 let E = null;
 let wake = null;
 let heldLeft = false;
+let instant = false;
 
 const files = {
   boot: null,
@@ -277,7 +251,7 @@ async function renderGrid() {
 }
 
 function openSheet(o) {
-  if (o.mac) return openMac();
+  if (o.macOnline) return openMac();
 
   files.boot = null;
   files.game = null;
@@ -320,8 +294,17 @@ function openSheet(o) {
       </div>
     </div>
 
+    ${o.state ? `
     <div class="row">
-      <label>Memory for the virtual PC. Windows 95/98/ME can crash above 512 MB.</label>
+      <label>Start mode</label>
+      <select id="mode">
+        <option value="instant" selected>Instant desktop (official snapshot, skips booting)</option>
+        <option value="fresh">Fresh boot (slower)</option>
+      </select>
+    </div>` : ''}
+
+    <div class="row">
+      <label>Memory for the virtual PC (snapshot start always uses ${o.mem} MB). Windows 95/98/ME can crash above 512 MB.</label>
       <select id="ram">${ramOptions}</select>
     </div>
 
@@ -351,9 +334,10 @@ function openSheet(o) {
 
     const blank = $('#blank') ? +$('#blank').value : 0;
     const ram = +$('#ram').value;
+    const inst = !!(o.state && $('#mode') && $('#mode').value === 'instant');
 
     closeSheet();
-    boot(o, { ram, blank, resume: false });
+    boot(o, { ram, blank, resume: false, instant: inst });
   };
 
   hasState(o.id).then(h => {
@@ -484,40 +468,40 @@ async function boot(o, opt) {
       bios: { url: urls.bios },
       vga_bios: { url: urls.vga },
 
-      memory_size: opt.ram * 1048576,
-      vga_memory_size: 32 * 1048576,
+      memory_size: (opt.instant ? o.mem : opt.ram) * 1048576,
+      vga_memory_size: 8 * 1048576,
 
       screen_container: $('#screen'),
       autostart: true,
 
-      /* IMPORTANT: keyboard must stay enabled for typing */
+      /* adapter must exist so keyboard_send_text works; we turn its own DOM listeners off below */
       disable_keyboard: false,
-      disable_mouse: true,
-
-      fastboot: true
+      disable_mouse: true
     };
+
+    if (o.mac) cfg.mac_address_translation = true;
+    if (o.acpi) cfg.acpi = true;
+    if (o.net) cfg.net_device = { type: o.net };
 
     let usedCd = false;
     let usedFda = false;
     let usedHda = false;
 
-    if (o.bz) {
-      ov('Downloading kernel…', '', 10);
-      cfg.bzimage = await remoteImg(o.bz);
-      cfg.cmdline = o.cmdline;
-    }
+    const copy = x => JSON.parse(JSON.stringify(x));
 
-    if (o.hda) {
-      ov('Checking disk image…', '', 10);
-      cfg.hda = await remoteImg(o.hda, o.big);
-      usedHda = true;
-    }
-
+    if (o.bzimage) { cfg.bzimage = copy(o.bzimage); cfg.cmdline = o.cmdline; }
+    if (o.hda) { cfg.hda = copy(o.hda); usedHda = true; }
+    if (o.cdrom) { cfg.cdrom = copy(o.cdrom); usedCd = true; }
     if (o.fda) {
-      ov('Downloading disk…', '', 10);
-      cfg.fda = await remoteImg(o.fda);
+      cfg.fda = copy(o.fda);
       usedFda = true;
+      /* KolibriOS: official server first, fall back to the mirror if it is unreachable */
+      if (o.fdaFallback) {
+        try { await fetch(cfg.fda.url, { method: 'HEAD', mode: 'no-cors' }); }
+        catch (e) { cfg.fda = copy(o.fdaFallback); }
+      }
     }
+    if (opt.instant && o.state) cfg.initial_state = copy(o.state);
 
     if (files.boot) {
       const k = classify(files.boot);
@@ -580,10 +564,10 @@ async function boot(o, opt) {
 
     emu = new V86(cfg);
 
-    /* Make sure the keyboard adapter is active */
-    try {
-      if (emu.keyboard_set_enabled) emu.keyboard_set_enabled(true);
-    } catch (e) {}
+    /* Our own handlers send keys; stop the library's window listener so keys are not doubled */
+    const kbOff = () => { try { emu && emu.keyboard_set_enabled && emu.keyboard_set_enabled(false); } catch (e) {} };
+    kbOff();
+    emu.add_listener('emulator-ready', kbOff);
 
     emu.add_listener('download-progress', e => {
       let p = null;
@@ -610,6 +594,7 @@ async function boot(o, opt) {
 
     emu.add_listener('emulator-started', () => {
       setTimeout(() => $('#ov').classList.add('hide'), 700);
+      if (o.autoEnter) setTimeout(() => tap('Enter'), 3500);
     });
 
     emu.add_listener('screen-set-mode', () => {
@@ -1055,14 +1040,12 @@ function releaseAllMods() {
 }
 
 function tap(code) {
-  sendMake(code);
+  /* goes through the key queue so it stays in order with typed text */
+  enq(() => sendMake(code));
+  enq(() => sendBreak(code));
 
-  setTimeout(() => {
-    sendBreak(code);
-
-    /* Release one-shot Ctrl / Alt; keep Shift held if user is holding it */
-    if (mods.ControlLeft || mods.AltLeft) releaseAllMods();
-  }, 40);
+  /* release one-shot Ctrl / Alt; keep Shift if the user is holding it */
+  if (mods.ControlLeft || mods.AltLeft) enq(releaseAllMods);
 }
 
 function char2code(ch) {
@@ -1080,25 +1063,75 @@ function char2code(ch) {
   return null;
 }
 
+/* key queue so fast typing never drops keys */
+const kq = [];
+let kqRun = false;
+
+function enq(fn) {
+  kq.push(fn);
+  if (!kqRun) { kqRun = true; pump(); }
+}
+
+function pump() {
+  const f = kq.shift();
+  if (!f) { kqRun = false; return; }
+  try { f(); } catch (e) {}
+  setTimeout(pump, 14);
+}
+
+/* char -> [key code, needs shift] (US layout) */
+const CH = {};
+'abcdefghijklmnopqrstuvwxyz'.split('').forEach(c => {
+  CH[c] = ['Key' + c.toUpperCase(), 0];
+  CH[c.toUpperCase()] = ['Key' + c.toUpperCase(), 1];
+});
+'1234567890'.split('').forEach(c => CH[c] = ['Digit' + c, 0]);
+
+const SYM = { '-': 'Minus', '=': 'Equal', '[': 'BracketLeft', ']': 'BracketRight', ';': 'Semicolon',
+  "'": 'Quote', '`': 'Backquote', '\\': 'Backslash', ',': 'Comma', '.': 'Period', '/': 'Slash', ' ': 'Space' };
+for (const k in SYM) CH[k] = [SYM[k], 0];
+
+const SH1 = { '!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0' };
+for (const k in SH1) CH[k] = ['Digit' + SH1[k], 1];
+
+const SH2 = { '_': '-', '+': '=', '{': '[', '}': ']', ':': ';', '"': "'", '~': '`', '|': '\\', '<': ',', '>': '.', '?': '/' };
+for (const k in SH2) CH[k] = [SYM[SH2[k]], 1];
+
+CH['\n'] = ['Enter', 0];
+CH['\t'] = ['Tab', 0];
+
+function typeChar(ch) {
+  const m = CH[ch];
+  if (!m) return;
+
+  const needShift = m[1] && !mods.ShiftLeft;
+
+  if (needShift) enq(() => sendMake('ShiftLeft'));
+  enq(() => sendMake(m[0]));
+  enq(() => sendBreak(m[0]));
+  if (needShift) enq(() => sendBreak('ShiftLeft'));
+}
+
 function typeText(text) {
   if (!emu || !text) return;
 
-  /* Ctrl / Alt are shortcut modifiers, not normal typing */
+  /* Ctrl / Alt are shortcut modifiers: Ctrl+C etc. */
   if (mods.ControlLeft || mods.AltLeft) {
     for (const ch of text) {
       const mapped = char2code(ch);
-
-      if (mapped) tap(mapped.c);
+      if (mapped) {
+        enq(() => sendMake(mapped.c));
+        enq(() => sendBreak(mapped.c));
+      }
     }
-
-    releaseAllMods();
+    enq(releaseAllMods);
     return;
   }
 
-  /* This is the path that types normal letters into DOS, Linux, Windows, etc. */
-  emu.keyboard_send_text(text);
+  for (const ch of text) typeChar(ch);
 
-  releaseAllMods();
+  /* one-shot Shift is released after the typed characters have been sent */
+  enq(releaseAllMods);
 }
 
 /* ---------- on-screen keyboard ---------- */
