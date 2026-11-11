@@ -58,6 +58,40 @@ h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
 #mac{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
 #mac.on{display:flex}
 #mac iframe{flex:1;border:0;width:100%;background:#fff}
+#run.imm #top,#run.imm #keys{display:none}
+#run.imm.menu #top{display:flex;position:absolute;left:0;right:0;top:0;z-index:30;background:rgba(15,18,26,.94)}
+#run.imm.menu #keys{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:30;background:rgba(15,18,26,.94)}
+#fab{display:none;position:absolute;top:max(8px,env(safe-area-inset-top));right:8px;z-index:40;width:38px;height:38px;border-radius:50%;border:1px solid #2a3248;background:rgba(20,24,36,.65);color:#e8ecf4;font-size:17px;padding:0}
+#run.imm #fab{display:block}
+.app{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:#0b0d12;border:1px solid #232a3b;border-radius:10px;margin-bottom:8px;font-size:14px;word-break:break-all}
+.app small{display:block;color:#8b95a9}
+.chk{display:flex;gap:8px;align-items:center;color:#cfd7e6;font-size:14px}
+#kbo{position:absolute;z-index:4;left:0;top:0;display:none;flex-direction:column;background:rgba(10,12,18,.74);border:1px solid #2a3248;border-radius:10px;padding:4px;touch-action:none;user-select:none;-webkit-user-select:none;--u:30px}
+#kbo.on{display:flex}
+#kbHead{display:flex;align-items:center;gap:4px;margin-bottom:3px;height:22px;cursor:grab;touch-action:none}
+#kbHead b{font-size:10px;color:#8b95a9;letter-spacing:1px;flex:1;white-space:nowrap;overflow:hidden}
+#kbHead button{height:20px;min-width:22px;padding:0 6px;font-size:10px;border:1px solid #2a3248;border-radius:6px;background:#1a2030;touch-action:manipulation}
+#kbHead button.on{background:#2b6cff;border-color:#2b6cff}
+#kbBody{display:flex;align-items:flex-start;gap:calc(var(--u)*.3)}
+#kbBody.col{flex-direction:column;align-items:center}
+.kr{display:flex}
+.kk{flex:0 0 auto;width:calc(var(--u)*var(--w,1) - 2px);height:calc(var(--u) - 2px);margin:1px;border-radius:calc(var(--u)*.16);background:#1c2130;border:1px solid #363e55;color:#dfe5f3;font-size:calc(var(--u)*.36);display:flex;align-items:center;justify-content:center;line-height:1;touch-action:none;box-sizing:border-box;position:relative;overflow:hidden;white-space:nowrap}
+.kk.lg{font-size:calc(var(--u)*.27)}
+#kbBody.col .ms .mm{height:calc(var(--u)*1.5)}
+.kk.sp{visibility:hidden;pointer-events:none}
+.kk.dn,.mbt.dn{background:#2b6cff;border-color:#6d9bff;color:#fff}
+.kk.lock::after{content:'';position:absolute;right:3px;top:3px;width:calc(var(--u)*.16);height:calc(var(--u)*.16);border-radius:50%;background:#7ee2ae}
+.ms{display:flex;flex-direction:column;width:calc(var(--u)*3.2);flex:0 0 auto}
+.ms .mt{display:flex;height:calc(var(--u)*2.1)}
+.mbt{background:#1c2130;border:1px solid #363e55;color:#dfe5f3;touch-action:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*.34)}
+.ms .mt .mbt:first-child{flex:1;border-radius:calc(var(--u)*1.2) 0 0 calc(var(--u)*.3)}
+.ms .mt .mbt:last-child{flex:1;border-radius:0 calc(var(--u)*1.2) calc(var(--u)*.3) 0}
+.ms .wh{width:calc(var(--u)*.7);display:flex;flex-direction:column;border-top:1px solid #363e55;border-bottom:1px solid #363e55}
+.ms .wh i{flex:1;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:calc(var(--u)*.3);color:#aab4cc;touch-action:none;background:#161a26}
+.ms .mm{height:calc(var(--u)*2.4);border:1px solid #363e55;border-top:0;border-radius:0 0 calc(var(--u)*1.1) calc(var(--u)*1.1);background:#161a26;display:flex;align-items:center;justify-content:center;color:#6f7a93;font-size:calc(var(--u)*.3)}
+.ms2{display:flex;flex-direction:column;flex:0 0 auto}
+.ms2 .mbt{width:calc(var(--u)*2.3);height:calc(var(--u)*1.5 - 2px);margin:1px;border-radius:calc(var(--u)*.16);flex-direction:column;gap:2px;line-height:1}
+.ms2 .mbt span{font-size:.8em;opacity:.8}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222a3d;padding:9px 14px;border-radius:99px;font-size:13px;z-index:50;display:none}
 </style>
 </head>
@@ -67,7 +101,8 @@ h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
   <h1>PC Launcher</h1>
   <p class="sub">Pick an OS. It runs on a real x86 PC emulator right on your phone.</p>
   <div class="grid" id="grid"></div>
-  <div class="note"><b>Be realistic:</b> this is a software PC inside a phone browser, so it is slow. Old systems (DOS, Windows 95/98, Linux, KolibriOS) run well. Modern Windows 10/11 and current macOS are not possible here. Games: DOS and Windows 9x era games work best.</div>
+  <button class="btn alt" id="appsBtn" style="margin-top:16px;width:100%">📁 My Apps</button>
+  <div class="note"><b>Reality check:</b> this is a software PC inside a phone browser, so it is slow. To speed it up: pick lighter systems (KolibriOS, DSL, Windows 3.1 / 95, DOS), use Instant start, keep sound off, and use Full screen. Windows 10/11 and current macOS are not possible here.</div>
 </div>
 
 <div id="sheet"><div class="in" id="sheetIn"></div></div>
@@ -76,12 +111,14 @@ h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
   <div id="top">
     <button class="k" id="bHome">✕ Exit</button>
     <button class="k" id="bPause">⏸</button>
-    <button class="k" id="bKb">⌨ Keyboard</button>
+    <button class="k" id="bKeys">🎹 Keys</button>
+    <button class="k" id="bKb">Aa Phone kb</button>
     <button class="k" id="bL">L-click</button>
     <button class="k" id="bR">R-click</button>
     <button class="k" id="bDrag">Drag</button>
     <button class="k" id="bSave">💾 Save</button>
-    <button class="k" id="bFs">⛶</button>
+    <button class="k" id="bFs">⛶ Full</button>
+    <button class="k" id="bFill">↔ Fill</button>
     <span id="title"></span>
   </div>
 
@@ -91,6 +128,20 @@ h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
       <canvas style="display:none"></canvas>
     </div>
 
+    <div id="kbo">
+      <div id="kbHead">
+        <b id="kbGrip">⠿ KEYS</b>
+        <button id="kbCad" title="Ctrl+Alt+Del">CAD</button>
+        <button id="kbFn">Fn</button>
+        <button id="kbNav">Nav</button>
+        <button id="kbMode">Mini</button>
+        <button id="kbSize">M</button>
+        <button id="kbOp">◐</button>
+        <button id="kbX">✕</button>
+      </div>
+      <div id="kbBody"></div>
+    </div>
+
     <div id="ov">
       <div id="ovT">Loading…</div>
       <div class="bar"><i id="ovB"></i></div>
@@ -98,7 +149,7 @@ h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
     </div>
   </div>
 
-  <div id="keys"></div>
+  <button id="fab" aria-label="Menu">☰</button>
   <textarea id="ta" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
 </div>
 
@@ -172,6 +223,231 @@ const OSES = [
     tag: 'your file', mem: 512, custom: true, blank: true }
 ];
 
+/* ---------- FAT16 disk builder: files -> MBR disk image (long names, folders) ---------- */
+async function buildFat16(entries, freeBytes, label) {
+  const SS = 512, SPT = 63, HEADS = 16, CYLS = SPT * HEADS, ROOTENT = 512;
+  const MAXT = 1024 * CYLS;                       // 504 MiB: keeps CHS valid for DOS / Win9x
+  const BAD = /[\\\/:*?"<>|\u0000-\u001f]/g;
+  const clean = s => {
+    s = String(s).replace(BAD, '_').replace(/[. ]+$/, '');
+    if (s.length > 255) s = s.slice(0, 255);
+    return s || '_';
+  };
+
+  /* 1. build tree */
+  const mkDir = (name, mtime) => ({ name, isDir: true, dirs: new Map(), files: new Map(), mtime: mtime || Date.now() });
+  const root = mkDir('', Date.now());
+  let nfiles = 0, ndirs = 0, totalData = 0;
+  for (const e of entries) {
+    const parts = String(e.path).replace(/\\/g, '/').split('/').filter(p => p && p !== '.' && p !== '..').map(clean);
+    if (!parts.length) continue;
+    const fname = parts.pop();
+    let d = root;
+    for (const p of parts) {
+      let nd = d.dirs.get(p.toLowerCase());
+      if (!nd) { nd = mkDir(p, e.mtime); d.dirs.set(p.toLowerCase(), nd); ndirs++; }
+      d = nd;
+    }
+    const key = fname.toLowerCase();
+    if (!d.files.has(key)) nfiles++; else totalData -= d.files.get(key).size;
+    d.files.set(key, { name: fname, isDir: false, size: e.size, read: e.read, mtime: e.mtime || Date.now() });
+    totalData += e.size;
+  }
+
+  /* 2. short (8.3) names + LFN need */
+  const OK83 = /^[A-Z0-9$%'\-_@~`!(){}^#&]+$/;
+  function shortFor(name, used) {
+    const dot = name.lastIndexOf('.');
+    let base = dot > 0 ? name.slice(0, dot) : name;
+    let ext = dot > 0 ? name.slice(dot + 1) : '';
+    let lossy = (name.indexOf('.') !== dot) || /\s/.test(name) || name.startsWith('.');
+    const fix = s => {
+      let out = '';
+      for (const ch of s.toUpperCase()) {
+        if (ch === ' ' || ch === '.') { lossy = true; continue; }
+        if (ch.length === 1 && OK83.test(ch)) out += ch; else { out += '_'; lossy = true; }
+      }
+      return out;
+    };
+    base = fix(base); ext = fix(ext);
+    if (!base) { base = '_'; lossy = true; }
+    if (base.length > 8) { base = base.slice(0, 8); lossy = true; }
+    if (ext.length > 3) { ext = ext.slice(0, 3); lossy = true; }
+    let short = base + (ext ? '.' + ext : '');
+    if (!lossy && !used.has(short)) { used.add(short); return { short, base, ext }; }
+    for (let n = 1; n < 1000000; n++) {
+      const tail = '~' + n;
+      const b = base.slice(0, Math.max(1, 8 - tail.length)) + tail;
+      short = b + (ext ? '.' + ext : '');
+      if (!used.has(short)) { used.add(short); return { short, base: b, ext }; }
+    }
+    throw new Error('Cannot make short name for ' + name);
+  }
+  const allDirs = [];
+  (function prep(d, isRoot) {
+    d.isRoot = isRoot;
+    const used = new Set();
+    const kids = [...d.dirs.values(), ...d.files.values()];
+    d.kids = kids;
+    let count = isRoot ? 1 : 2;                    // label entry / '.' and '..'
+    for (const k of kids) {
+      const s = shortFor(k.name, used);
+      k.s = s; k.lfn = k.name !== s.short;
+      count += 1 + (k.lfn ? Math.ceil(k.name.length / 13) : 0);
+    }
+    d.entries = count;
+    if (isRoot && count > ROOTENT) throw new Error('Too many items in the top folder (max ~' + Math.floor(ROOTENT / 2) + '). Put them in a zip.');
+    allDirs.push(d);
+    for (const c of d.dirs.values()) prep(c, false);
+  })(root, true);
+
+  /* 3. geometry, grow disk until everything fits */
+  const roundUp = (n, m) => Math.ceil(n / m) * m;
+  let T = roundUp(Math.max(64 * 1048576, totalData + freeBytes + (nfiles + ndirs) * 8192) / SS, CYLS);
+  let geo = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    if (T > MAXT) {
+      if (T - MAXT > 4 * CYLS && attempt > 0 && geo === null) throw new Error('Too much data. The apps drive can hold about 500 MB.');
+      T = MAXT;
+    }
+    const P = T - 63;
+    let spc = 1, fatsec = 0, clusters = 0;
+    for (spc = 1; spc <= 64; spc *= 2) {
+      fatsec = 1;
+      for (let i = 0; i < 5; i++) {
+        clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc);
+        fatsec = Math.ceil((clusters + 2) * 2 / SS);
+      }
+      clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc);
+      if (clusters <= 65000) break;
+    }
+    const cb = spc * SS;
+    let need = 0;
+    for (const d of allDirs) { if (!d.isRoot) need += Math.max(1, Math.ceil(d.entries * 32 / cb)); for (const f of d.files.values()) need += Math.ceil(f.size / cb); }
+    if (need <= clusters && clusters >= 4085) { geo = { P, spc, fatsec, clusters, cb }; break; }
+    if (T >= MAXT) throw new Error('Too much data. The apps drive can hold about 500 MB.');
+    T = roundUp(T * 1.25, CYLS);
+  }
+  if (!geo) throw new Error('Could not size the disk');
+  const { P, spc, fatsec, clusters, cb } = geo;
+
+  /* 4. allocate clusters */
+  const fat = new Uint16Array(clusters + 2);
+  fat[0] = 0xFFF8; fat[1] = 0xFFFF;
+  let next = 2;
+  const alloc = n => {
+    if (n <= 0) return 0;
+    const s = next;
+    for (let i = 0; i < n; i++) fat[s + i] = (i === n - 1) ? 0xFFFF : s + i + 1;
+    next += n;
+    return s;
+  };
+  (function place(d) {
+    if (!d.isRoot) d.start = alloc(Math.max(1, Math.ceil(d.entries * 32 / cb)));
+    for (const f of d.files.values()) f.start = alloc(Math.ceil(f.size / cb));
+    for (const c of d.dirs.values()) place(c);
+  })(root);
+
+  /* 5. write image */
+  const img = new Uint8Array(T * SS);
+  const dv = new DataView(img.buffer);
+  // MBR
+  const endCyl = T / CYLS - 1;
+  const p = 446;
+  img[p] = 0x00; img[p + 1] = 1; img[p + 2] = 1; img[p + 3] = 0; img[p + 4] = 0x06;
+  img[p + 5] = HEADS - 1; img[p + 6] = SPT | ((endCyl >> 8) & 3) << 6; img[p + 7] = endCyl & 255;
+  dv.setUint32(p + 8, 63, true); dv.setUint32(p + 12, P, true);
+  img[0] = 0xCD; img[1] = 0x18;                 // not bootable: INT 18h lets the BIOS try the next device
+  img[510] = 0x55; img[511] = 0xAA;
+  // boot sector
+  const bs = 63 * SS;
+  img[bs] = 0xEB; img[bs + 1] = 0x3C; img[bs + 2] = 0x90;
+  [...'MSDOS5.0'].forEach((c, i) => img[bs + 3 + i] = c.charCodeAt(0));
+  dv.setUint16(bs + 11, SS, true); img[bs + 13] = spc; dv.setUint16(bs + 14, 1, true); img[bs + 16] = 2;
+  dv.setUint16(bs + 17, ROOTENT, true); dv.setUint16(bs + 19, P < 65536 ? P : 0, true); img[bs + 21] = 0xF8;
+  dv.setUint16(bs + 22, fatsec, true); dv.setUint16(bs + 24, SPT, true); dv.setUint16(bs + 26, HEADS, true);
+  dv.setUint32(bs + 28, 63, true); dv.setUint32(bs + 32, P < 65536 ? 0 : P, true);
+  img[bs + 36] = 0x80; img[bs + 38] = 0x29; dv.setUint32(bs + 39, (Date.now() & 0x7fffffff) >>> 0, true);
+  const lab = (label || 'MYAPPS').toUpperCase().replace(/[^A-Z0-9_ ]/g, '_').slice(0, 11).padEnd(11, ' ');
+  [...lab].forEach((c, i) => img[bs + 43 + i] = c.charCodeAt(0));
+  [...'FAT16   '].forEach((c, i) => img[bs + 54 + i] = c.charCodeAt(0));
+  img[bs + 62] = 0xCD; img[bs + 63] = 0x18;
+  img[bs + 510] = 0x55; img[bs + 511] = 0xAA;
+  // FATs
+  const fat0 = bs + SS;
+  for (let i = 0; i < fat.length; i++) { dv.setUint16(fat0 + i * 2, fat[i], true); dv.setUint16(fat0 + fatsec * SS + i * 2, fat[i], true); }
+  const rootOff = bs + (1 + 2 * fatsec) * SS;
+  const dataOff = rootOff + 32 * SS;
+  const clOff = c => dataOff + (c - 2) * cb;
+
+  const dosDT = ms => {
+    const d = new Date(ms || Date.now());
+    let y = d.getFullYear(); if (y < 1980) y = 1980; if (y > 2107) y = 2107;
+    return {
+      date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(),
+      time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)
+    };
+  };
+  const put83 = (off, base, ext, attr, start, size, ms) => {
+    const n = (base.padEnd(8, ' ') + ext.padEnd(3, ' '));
+    for (let i = 0; i < 11; i++) img[off + i] = n.charCodeAt(i);
+    img[off + 11] = attr;
+    const t = dosDT(ms);
+    dv.setUint16(off + 14, t.time, true); dv.setUint16(off + 16, t.date, true); dv.setUint16(off + 18, t.date, true);
+    dv.setUint16(off + 22, t.time, true); dv.setUint16(off + 24, t.date, true);
+    dv.setUint16(off + 26, start, true); dv.setUint32(off + 28, size >>> 0, true);
+  };
+  const csum = (base, ext) => {
+    const n = base.padEnd(8, ' ') + ext.padEnd(3, ' ');
+    let s = 0;
+    for (let i = 0; i < 11; i++) s = ((((s & 1) ? 0x80 : 0) + (s >> 1) + n.charCodeAt(i)) & 0xFF);
+    return s;
+  };
+  const LPOS = [1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30];
+
+  function writeDir(d, parentStart) {
+    let off = d.isRoot ? rootOff : clOff(d.start);
+    if (d.isRoot) {
+      put83(off, lab.slice(0, 8).trimEnd(), lab.slice(8).trimEnd(), 0x08, 0, 0, Date.now()); off += 32;
+    } else {
+      put83(off, '.', '', 0x10, d.start, 0, d.mtime); off += 32;
+      put83(off, '..', '', 0x10, parentStart, 0, d.mtime); off += 32;
+    }
+    for (const k of d.kids) {
+      if (k.lfn) {
+        const u = []; for (let i = 0; i < k.name.length; i++) u.push(k.name.charCodeAt(i));
+        const n = Math.ceil(u.length / 13);
+        const cs = csum(k.s.base, k.s.ext);
+        for (let o = n; o >= 1; o--) {
+          img[off] = o | (o === n ? 0x40 : 0);
+          for (let j = 0; j < 13; j++) {
+            const idx = (o - 1) * 13 + j;
+            const c = idx < u.length ? u[idx] : (idx === u.length ? 0 : 0xFFFF);
+            dv.setUint16(off + LPOS[j], c, true);
+          }
+          img[off + 11] = 0x0F; img[off + 12] = 0; img[off + 13] = cs;
+          off += 32;
+        }
+      }
+      if (k.isDir) put83(off, k.s.base, k.s.ext, 0x10, k.start, 0, k.mtime);
+      else put83(off, k.s.base, k.s.ext, 0x20, k.start || 0, k.size, k.mtime);
+      off += 32;
+    }
+  }
+  const writeAll = async (d, parentStart) => {
+    writeDir(d, parentStart);
+    for (const f of d.files.values()) {
+      if (!f.size) continue;
+      const data = await f.read();
+      if (data.length !== f.size) throw new Error('File changed while reading: ' + f.name);
+      img.set(data, clOff(f.start));
+    }
+    for (const c of d.dirs.values()) await writeAll(c, d.isRoot ? 0 : d.start);
+  };
+  await writeAll(root, 0);
+  return { image: img, usedClusters: next - 2, totalClusters: clusters, clusterBytes: cb };
+}
+
 /* ---------- state ---------- */
 let emu = null;
 let cur = null;
@@ -180,6 +456,15 @@ let E = null;
 let wake = null;
 let heldLeft = false;
 let instant = false;
+let imm = false;
+let stretch = false;
+let fsApi = false;
+let lastKey = '';
+const pressed = new Set();
+let kbEls = new Map();
+let msEls = { l: [], m: [], r: [] };
+const mprev = { l: false, m: false, r: false };
+const mclicks = { l: [], r: [] };
 
 const files = {
   boot: null,
@@ -188,9 +473,13 @@ const files = {
 
 /* ---------- IndexedDB ---------- */
 const idb = () => new Promise((res, rej) => {
-  const r = indexedDB.open('pclauncher', 1);
+  const r = indexedDB.open('pclauncher', 2);
 
-  r.onupgradeneeded = () => r.result.createObjectStore('s');
+  r.onupgradeneeded = () => {
+    const db = r.result;
+    if (!db.objectStoreNames.contains('s')) db.createObjectStore('s');
+    if (!db.objectStoreNames.contains('apps')) db.createObjectStore('apps');
+  };
   r.onsuccess = () => res(r.result);
   r.onerror = () => rej(r.error);
 });
@@ -224,6 +513,133 @@ const hasState = async k => {
   }
 };
 
+/* ---------- My Apps library (kept on the phone, shown as a drive in the PC) ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
+const appsAll = async () => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const q = d.transaction('apps').objectStore('apps').getAll();
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => rej(q.error);
+  });
+};
+
+const appsPutMany = async recs => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('apps', 'readwrite');
+    const st = t.objectStore('apps');
+    recs.forEach(r => st.put(r, r.path));
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('Not enough storage'));
+  });
+};
+
+const appsDelGroup = async g => {
+  const all = await appsAll();
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('apps', 'readwrite');
+    const st = t.objectStore('apps');
+    all.forEach(r => { if (r.group === g) st.delete(r.path); });
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+let FF = null;
+function loadFflate() {
+  return FF || (FF = new Promise((res, rej) => {
+    if (window.fflate) return res(window.fflate);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js';
+    s.onload = () => window.fflate ? res(window.fflate) : rej(new Error('Zip library failed to start'));
+    s.onerror = () => { FF = null; rej(new Error('Could not load the zip library (needs internet)')); };
+    document.head.appendChild(s);
+  }));
+}
+
+async function importFiles(list) {
+  const recs = [];
+
+  for (const f of list) {
+    toast('Reading ' + f.name + '…', 10000);
+    await appsDelGroup(f.name);
+
+    if (/\.zip$/i.test(f.name)) {
+      const ff = await loadFflate();
+      const out = ff.unzipSync(new Uint8Array(await f.arrayBuffer()));
+      const paths = Object.keys(out).filter(p => !p.endsWith('/') && !/(^|\/)(__MACOSX|\.DS_Store)(\/|$)/.test(p));
+      const tops = new Set(paths.map(p => p.split('/')[0]));
+      const hasRootFile = paths.some(p => !p.includes('/'));
+      const prefix = (tops.size > 1 || hasRootFile) ? f.name.replace(/\.zip$/i, '') + '/' : '';
+
+      for (const p of paths) {
+        recs.push({ path: prefix + p, group: f.name, blob: new Blob([out[p]]), size: out[p].length });
+      }
+    } else {
+      recs.push({ path: f.name, group: f.name, blob: f, size: f.size });
+    }
+  }
+
+  await appsPutMany(recs);
+  return recs.length;
+}
+
+async function updateAppsBtn() {
+  try {
+    const all = await appsAll();
+    $('#appsBtn').textContent = '📁 My Apps' + (all.length ? ' (' + all.length + ' files)' : '');
+  } catch (e) {}
+}
+
+async function openApps() {
+  let all = [];
+  try { all = await appsAll(); } catch (e) {}
+
+  const groups = new Map();
+  for (const r of all) {
+    const g = groups.get(r.group) || { n: 0, size: 0 };
+    g.n++; g.size += r.size;
+    groups.set(r.group, g);
+  }
+
+  const rows = [...groups].map(([g, v]) =>
+    `<div class="app"><span>${esc(g)}<small>${v.n} file${v.n > 1 ? 's' : ''} · ${fmt(v.size)}</small></span><button class="k" data-del="${esc(g)}">✕</button></div>`
+  ).join('') || '<div style="color:#8b95a9;margin:10px 0">Nothing yet.</div>';
+
+  $('#sheetIn').innerHTML = `
+    <h2>📁 My Apps</h2>
+    <div style="color:#8b95a9;font-size:13.5px">Add installers, games or .zip files. They stay on your phone and appear as a drive inside any PC you boot (D: on Windows and DOS). Zips are unpacked. Changes made inside the PC are not saved back here. Max about 500 MB total.</div>
+    <div class="row"><label>Add files or .zip</label><div class="file"><input type="file" id="fApps" multiple></div></div>
+    ${rows}
+    <div class="btns"><button class="btn alt" id="aClose">Close</button></div>`;
+
+  $('#sheet').classList.add('open');
+  $('#aClose').onclick = () => { closeSheet(); updateAppsBtn(); };
+
+  $('#fApps').onchange = async e => {
+    const list = [...e.target.files];
+    if (!list.length) return;
+    try {
+      const n = await importFiles(list);
+      toast('Added ' + n + ' file' + (n === 1 ? '' : 's'));
+    } catch (err) {
+      toast('Import failed: ' + (err.message || err), 5000);
+    }
+    openApps();
+  };
+
+  $('#sheetIn').querySelectorAll('[data-del]').forEach(b => {
+    b.onclick = async () => { await appsDelGroup(b.dataset.del); openApps(); };
+  });
+}
+
+$('#appsBtn').onclick = openApps;
+
 /* ---------- home screen ---------- */
 async function renderGrid() {
   const g = $('#grid');
@@ -250,8 +666,12 @@ async function renderGrid() {
   });
 }
 
-function openSheet(o) {
+async function openSheet(o) {
   if (o.macOnline) return openMac();
+
+  let lib = [];
+  try { lib = await appsAll(); } catch (e) {}
+  const libSize = lib.reduce((n, r) => n + r.size, 0);
 
   files.boot = null;
   files.game = null;
@@ -303,9 +723,24 @@ function openSheet(o) {
       </select>
     </div>` : ''}
 
+    ${lib.length ? `
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="useApps" checked> Attach My Apps as a drive (${lib.length} files, ${fmt(libSize)})</label>
+      <select id="appsFree">
+        <option value="16777216">+16 MB free space</option>
+        <option value="67108864" selected>+64 MB free space</option>
+        <option value="268435456">+256 MB free space</option>
+      </select>
+      <label id="appsNote" style="display:none">Snapshots cannot take a new drive. Choose Fresh boot to attach My Apps.</label>
+    </div>` : ''}
+
     <div class="row">
       <label>Memory for the virtual PC (snapshot start always uses ${o.mem} MB). Windows 95/98/ME can crash above 512 MB.</label>
       <select id="ram">${ramOptions}</select>
+    </div>
+
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="snd"> Sound (uses more CPU, slower)</label>
     </div>
 
     <div class="btns">
@@ -320,6 +755,29 @@ function openSheet(o) {
 
   $('#sheet').classList.add('open');
 
+  const syncApps = () => {
+    const c = $('#useApps');
+    if (!c) return;
+    const inst = !!($('#mode') && $('#mode').value === 'instant');
+    c.disabled = inst;
+    $('#appsNote').style.display = inst ? 'block' : 'none';
+  };
+  if ($('#mode')) $('#mode').onchange = syncApps;
+  syncApps();
+
+  const bootOpts = resume => {
+    const inst = !resume && !!(o.state && $('#mode') && $('#mode').value === 'instant');
+    return {
+      ram: +$('#ram').value,
+      blank: $('#blank') ? +$('#blank').value : 0,
+      resume,
+      instant: inst,
+      apps: !!($('#useApps') && $('#useApps').checked && !inst),
+      appsFree: $('#appsFree') ? +$('#appsFree').value : 67108864,
+      sound: !!($('#snd') && $('#snd').checked)
+    };
+  };
+
   const fb = $('#fBoot');
   if (fb) fb.onchange = () => files.boot = fb.files[0] || null;
 
@@ -332,12 +790,10 @@ function openSheet(o) {
       return;
     }
 
-    const blank = $('#blank') ? +$('#blank').value : 0;
-    const ram = +$('#ram').value;
-    const inst = !!(o.state && $('#mode') && $('#mode').value === 'instant');
+    const opts = bootOpts(false);
 
     closeSheet();
-    boot(o, { ram, blank, resume: false, instant: inst });
+    boot(o, opts);
   };
 
   hasState(o.id).then(h => {
@@ -351,11 +807,10 @@ function openSheet(o) {
         return;
       }
 
-      const blank = $('#blank') ? +$('#blank').value : 0;
-      const ram = +$('#ram').value;
+      const opts = bootOpts(true);
 
       closeSheet();
-      boot(o, { ram, blank, resume: true });
+      boot(o, opts);
     };
   });
 }
@@ -430,6 +885,7 @@ function classify(f) {
 }
 
 function resetScreen() {
+  lastKey = '';
   const sc = $('#screen');
 
   sc.innerHTML = `
@@ -452,6 +908,7 @@ function ov(t, s, p) {
 async function boot(o, opt) {
   cur = o;
   paused = false;
+  setTimeout(showKb, 50);
   $('#bPause').textContent = '⏸';
 
   $('#run').classList.add('on');
@@ -476,7 +933,8 @@ async function boot(o, opt) {
 
       /* adapter must exist so keyboard_send_text works; we turn its own DOM listeners off below */
       disable_keyboard: false,
-      disable_mouse: true
+      disable_mouse: true,
+      disable_speaker: !opt.sound
     };
 
     if (o.mac) cfg.mac_address_translation = true;
@@ -523,6 +981,26 @@ async function boot(o, opt) {
       usedHda = true;
     }
 
+    if (opt.apps) {
+      ov('Preparing My Apps drive…', 'Packing your files into a disk', 15);
+      await new Promise(r => setTimeout(r, 30));
+      const recs = await appsAll();
+      const entries = recs.map(r => ({
+        path: r.path,
+        size: r.blob.size,
+        mtime: r.blob.lastModified || Date.now(),
+        read: async () => new Uint8Array(await r.blob.arrayBuffer())
+      }));
+      const built = await buildFat16(entries, opt.appsFree || 67108864, 'MYAPPS');
+
+      if (!usedHda) {
+        cfg.hda = { buffer: built.image.buffer };
+        usedHda = true;
+      } else {
+        cfg.hdb = { buffer: built.image.buffer };
+      }
+    }
+
     if (files.game) {
       const k = classify(files.game);
 
@@ -538,6 +1016,8 @@ async function boot(o, opt) {
         if (!usedHda) {
           cfg.hda = { buffer: files.game };
           usedHda = true;
+        } else if (cfg.hdb) {
+          toast('Only two hard disks fit: extra game disk skipped');
         } else {
           cfg.hdb = { buffer: files.game };
         }
@@ -625,6 +1105,9 @@ async function stopEmu() {
   } catch (e) {}
 
   wake = null;
+  for (const c in mods) mods[c] = 0;
+  pressed.clear();
+  kbVisAll();
   heldLeft = false;
 
   $('#bDrag').classList.remove('on');
@@ -635,6 +1118,7 @@ $('#bHome').onclick = async () => {
   if (emu && !confirm('Exit? Unsaved progress will be lost (use Save first).')) return;
 
   await stopEmu();
+  if (imm) setImm(false);
   $('#run').classList.remove('on');
   renderGrid();
 };
@@ -668,17 +1152,45 @@ $('#bSave').onclick = async () => {
   }
 };
 
-$('#bFs').onclick = () => {
-  const d = document;
+function setImm(on) {
+  imm = on;
+  const run = $('#run');
+  run.classList.toggle('imm', on);
+  run.classList.remove('menu');
 
-  if (d.fullscreenElement) {
-    d.exitFullscreen();
+  if (on) {
+    try {
+      const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      if (p) {
+        fsApi = true;
+        p.then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} })
+         .catch(() => { fsApi = false; });
+      }
+    } catch (e) { fsApi = false; }
+    toast('Full screen. Tap ☰ for controls', 3000);
   } else {
-    d.documentElement.requestFullscreen?.()
-      .then(() => screen.orientation?.lock?.('landscape').catch(() => {}))
-      .catch(() => {});
+    fsApi = false;
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    try { screen.orientation.unlock(); } catch (e) {}
   }
+
+  lastKey = '';
+  setTimeout(fit, 80);
+  setTimeout(fit, 500);
+  setTimeout(() => { if (KBP.on) { buildKb(); layoutKb(); } }, 120);
+}
+
+$('#bFs').onclick = () => setImm(!imm);
+$('#fab').onclick = () => $('#run').classList.toggle('menu');
+$('#bFill').onclick = () => {
+  stretch = !stretch;
+  $('#bFill').classList.toggle('on', stretch);
+  lastKey = '';
+  fit();
 };
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && imm && fsApi) setImm(false);
+});
 
 /* ---------- screen scaling ---------- */
 function fit() {
@@ -702,17 +1214,27 @@ function fit() {
 
   if (!w || !h) return;
 
-  const s = Math.min(box.clientWidth / w, box.clientHeight / h);
+  /* skip all layout work when nothing changed */
+  const key = w + 'x' + h + '/' + box.clientWidth + 'x' + box.clientHeight + '/' + stretch;
+  if (key === lastKey) return;
+  lastKey = key;
+
+  const sx = box.clientWidth / w;
+  const sy = box.clientHeight / h;
+  const s = Math.min(sx, sy);
+  const ax = stretch ? sx : s;
+  const ay = stretch ? sy : s;
 
   sc.style.width = w + 'px';
   sc.style.height = h + 'px';
-  sc.style.transform = `scale(${s})`;
-  sc.style.left = Math.max(0, (box.clientWidth - w * s) / 2) + 'px';
-  sc.style.top = Math.max(0, (box.clientHeight - h * s) / 2) + 'px';
+  sc.style.transform = `scale(${ax},${ay})`;
+  sc.style.left = Math.max(0, (box.clientWidth - w * ax) / 2) + 'px';
+  sc.style.top = Math.max(0, (box.clientHeight - h * ay) / 2) + 'px';
 }
 
-setInterval(fit, 400);
-addEventListener('resize', fit);
+setInterval(fit, 500);
+addEventListener('resize', () => { lastKey = ''; fit(); });
+addEventListener('orientationchange', () => setTimeout(() => { lastKey = ''; fit(); }, 300));
 
 /* ---------- touch mouse ---------- */
 const stage = $('#stage');
@@ -728,7 +1250,11 @@ let accY = 0;
 let twoMoved = false;
 let dragTap = false;
 
-const click = (l, m, r) => emu && emu.bus.send('mouse-click', [l, m, r]);
+const click = (l, m, r) => {
+  if (!emu) return;
+  emu.bus.send('mouse-click', [l, m, r]);
+  onMouse(l, m, r);
+};
 
 const resumeAudio = () => {
   try {
@@ -741,6 +1267,7 @@ stage.addEventListener('touchstart', e => {
   if (!emu) return;
 
   resumeAudio();
+  if (imm) $('#run').classList.remove('menu');
 
   for (const t of e.changedTouches) {
     tch[t.identifier] = { x: t.clientX, y: t.clientY };
@@ -1008,11 +1535,13 @@ const brk = c => {
   return r;
 };
 
+/* 0 = off, 1 = one-shot (released after the next key), 2 = locked (double tap) */
 const mods = {
-  ControlLeft: false,
-  AltLeft: false,
-  ShiftLeft: false
+  ControlLeft: 0, AltLeft: 0, ShiftLeft: 0,
+  ControlRight: 0, AltRight: 0, ShiftRight: 0
 };
+const anyShift = () => mods.ShiftLeft || mods.ShiftRight;
+const anyCtrlAlt = () => mods.ControlLeft || mods.AltLeft || mods.ControlRight || mods.AltRight;
 
 /* Keys already sent by keydown; prevents duplicate letters */
 const physicalDown = new Set();
@@ -1020,21 +1549,22 @@ const physicalDown = new Set();
 function sendMake(code) {
   const seq = make(code);
   if (seq && emu) emu.keyboard_send_scancodes(seq);
+  pressed.add(code);
+  kbVis(code);
 }
 
 function sendBreak(code) {
   const seq = brk(code);
   if (seq && emu) emu.keyboard_send_scancodes(seq);
+  pressed.delete(code);
+  kbVis(code);
 }
 
-function releaseAllMods() {
+function releaseAllMods(force) {
   for (const code of Object.keys(mods)) {
-    if (mods[code]) {
+    if (mods[code] && (force === true || mods[code] === 1)) {
+      mods[code] = 0;
       sendBreak(code);
-      mods[code] = false;
-
-      const btn = document.querySelector(`[data-mod="${code}"]`);
-      if (btn) btn.classList.remove('on');
     }
   }
 }
@@ -1045,7 +1575,7 @@ function tap(code) {
   enq(() => sendBreak(code));
 
   /* release one-shot Ctrl / Alt; keep Shift if the user is holding it */
-  if (mods.ControlLeft || mods.AltLeft) enq(releaseAllMods);
+  if (anyCtrlAlt() || anyShift()) enq(() => releaseAllMods());
 }
 
 function char2code(ch) {
@@ -1104,7 +1634,7 @@ function typeChar(ch) {
   const m = CH[ch];
   if (!m) return;
 
-  const needShift = m[1] && !mods.ShiftLeft;
+  const needShift = m[1] && !anyShift();
 
   if (needShift) enq(() => sendMake('ShiftLeft'));
   enq(() => sendMake(m[0]));
@@ -1116,7 +1646,7 @@ function typeText(text) {
   if (!emu || !text) return;
 
   /* Ctrl / Alt are shortcut modifiers: Ctrl+C etc. */
-  if (mods.ControlLeft || mods.AltLeft) {
+  if (anyCtrlAlt()) {
     for (const ch of text) {
       const mapped = char2code(ch);
       if (mapped) {
@@ -1124,94 +1654,286 @@ function typeText(text) {
         enq(() => sendBreak(mapped.c));
       }
     }
-    enq(releaseAllMods);
+    enq(() => releaseAllMods());
     return;
   }
 
   for (const ch of text) typeChar(ch);
 
   /* one-shot Shift is released after the typed characters have been sent */
-  enq(releaseAllMods);
+  enq(() => releaseAllMods());
 }
 
-/* ---------- on-screen keyboard ---------- */
-const KB = [
-  ['Esc', 'Escape'],
-  ['Tab', 'Tab'],
-  ['Ctrl', 'ControlLeft', 'mod'],
-  ['Alt', 'AltLeft', 'mod'],
-  ['Shift', 'ShiftLeft', 'mod'],
-  ['⌫', 'Backspace'],
-  ['↵', 'Enter'],
-  ['Space', 'Space'],
+/* ---------- on-screen keyboard + mouse overlay ---------- */
+const KBP = { on: true, mode: 'full', size: 'M', op: 0, fn: true, nav: true, x: null, y: null };
+try { Object.assign(KBP, JSON.parse(localStorage.getItem('pcl_kb') || '{}')); } catch (e) {}
+const saveKbp = () => { try { localStorage.setItem('pcl_kb', JSON.stringify(KBP)); } catch (e) {} };
 
-  ['←', 'ArrowLeft'],
-  ['↑', 'ArrowUp'],
-  ['↓', 'ArrowDown'],
-  ['→', 'ArrowRight'],
-  ['Del', 'Delete'],
-  ['Home', 'Home'],
-  ['End', 'End'],
-  ['PgUp', 'PageUp'],
-  ['PgDn', 'PageDown'],
-  ['Win', 'MetaLeft'],
+const kbo = $('#kbo');
+const kbBody = $('#kbBody');
+const MODKEYS = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight']);
+const FNK = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
 
-  ['F1', 'F1'],
-  ['F2', 'F2'],
-  ['F3', 'F3'],
-  ['F4', 'F4'],
-  ['F5', 'F5'],
-  ['F6', 'F6'],
-  ['F7', 'F7'],
-  ['F8', 'F8'],
-  ['F9', 'F9'],
-  ['F10', 'F10'],
-  ['F11', 'F11'],
-  ['F12', 'F12'],
-  ['Ctrl+Alt+Del', 'cad']
-];
+const kcell = (label, code, w = 1) => code
+  ? `<div class="kk${String(label).length > 3 ? ' lg' : ''}" style="--w:${w}" data-code="${code}"${MODKEYS.has(code) ? ' data-mod="1"' : ''}>${label}</div>`
+  : `<div class="kk sp" style="--w:${w}"></div>`;
+const krow = cells => `<div class="kr">${cells.join('')}</div>`;
 
-const kb = $('#keys');
+function fullKeysHTML() {
+  const sp = w => kcell(null, null, w);
+  const nv = (l, c) => KBP.nav ? kcell(l, c) : sp(1);
+  const L = s => [...s].map(c => kcell(c, 'Key' + c));
+  const rows = [];
 
-for (const [label, code, type] of KB) {
-  const b = document.createElement('button');
-  b.className = 'k';
-  b.textContent = label;
+  if (KBP.fn) rows.push(krow([kcell('Esc', 'Escape', 1.5), ...FNK.map(f => kcell(f, f)), sp(1.5), sp(.3), sp(3)]));
 
-  b.addEventListener('pointerdown', e => e.preventDefault());
-
-  b.onclick = () => {
-    if (!emu) return;
-
-    if (code === 'cad') {
-      const seq = ['ControlLeft', 'AltLeft', 'Delete'];
-
-      seq.forEach(sendMake);
-
-      setTimeout(() => {
-        seq.slice().reverse().forEach(sendBreak);
-      }, 80);
-
-      return;
-    }
-
-    if (type === 'mod') {
-      mods[code] = !mods[code];
-
-      if (mods[code]) sendMake(code);
-      else sendBreak(code);
-
-      b.classList.toggle('on', mods[code]);
-      b.dataset.mod = code;
-
-      return;
-    }
-
-    tap(code);
-  };
-
-  kb.appendChild(b);
+  rows.push(krow([
+    kcell(KBP.fn ? '`' : 'Esc', KBP.fn ? 'Backquote' : 'Escape'),
+    ...'1234567890'.split('').map(c => kcell(c, 'Digit' + c)),
+    kcell('-', 'Minus'), kcell('=', 'Equal'), kcell('⌫', 'Backspace', 2),
+    sp(.3), nv('Ins', 'Insert'), nv('Home', 'Home'), nv('PgUp', 'PageUp')
+  ]));
+  rows.push(krow([
+    kcell('Tab', 'Tab', 1.5), ...L('QWERTYUIOP'), kcell('[', 'BracketLeft'), kcell(']', 'BracketRight'), kcell('\\', 'Backslash', 1.5),
+    sp(.3), nv('Del', 'Delete'), nv('End', 'End'), nv('PgDn', 'PageDown')
+  ]));
+  rows.push(krow([
+    kcell('Caps', 'CapsLock', 1.75), ...L('ASDFGHJKL'), kcell(';', 'Semicolon'), kcell("'", 'Quote'), kcell('Enter', 'Enter', 2.25),
+    sp(.3), sp(3)
+  ]));
+  rows.push(krow([
+    kcell('Shift', 'ShiftLeft', 2.25), ...L('ZXCVBNM'), kcell(',', 'Comma'), kcell('.', 'Period'), kcell('/', 'Slash'), kcell('Shift', 'ShiftRight', 2.75),
+    sp(.3), sp(1), kcell('↑', 'ArrowUp'), sp(1)
+  ]));
+  rows.push(krow([
+    kcell('Ctrl', 'ControlLeft', 1.25), kcell('Win', 'MetaLeft', 1.25), kcell('Alt', 'AltLeft', 1.25), kcell('Space', 'Space', 6.25),
+    kcell('Alt', 'AltRight', 1.25), kcell('Win', 'MetaRight', 1.25), kcell('Menu', 'ContextMenu', 1.25), kcell('Ctrl', 'ControlRight', 1.25),
+    sp(.3), kcell('←', 'ArrowLeft'), kcell('↓', 'ArrowDown'), kcell('→', 'ArrowRight')
+  ]));
+  return `<div class="kbk">${rows.join('')}</div>`;
 }
+
+const fullMouseHTML = () => `
+  <div class="ms">
+    <div class="mt">
+      <div class="mbt" data-mb="l">L</div>
+      <div class="wh"><i data-w="1">▲</i><i data-w="-1">▼</i></div>
+      <div class="mbt" data-mb="r">R</div>
+    </div>
+    <div class="mm"><span data-mb="m" style="padding:6px 14px">M</span></div>
+  </div>`;
+
+function miniHTML() {
+  const sp = w => kcell(null, null, w);
+  return `<div class="kbk">
+      ${krow([kcell('Q', 'KeyQ'), kcell('W', 'KeyW'), kcell('E', 'KeyE')])}
+      ${krow([kcell('A', 'KeyA'), kcell('S', 'KeyS'), kcell('D', 'KeyD')])}
+      ${krow([kcell('Shift', 'ShiftLeft', 1.5), kcell('Space', 'Space', 1.5)])}
+      ${krow([kcell('Ctrl', 'ControlLeft', 1.5), kcell('Esc', 'Escape', 1.5)])}
+    </div>
+    <div class="ms2">
+      <div class="mbt" data-mb="l"><b>LMB</b><span data-cps="l">0</span></div>
+      <div class="mbt" data-mb="r"><b>RMB</b><span data-cps="r">0</span></div>
+      <div class="mbt" data-w="1" style="height:calc(var(--u)*.9);font-size:calc(var(--u)*.3)">▲ wheel</div>
+      <div class="mbt" data-w="-1" style="height:calc(var(--u)*.9);font-size:calc(var(--u)*.3)">▼ wheel</div>
+    </div>`;
+}
+
+function kbVis(code) {
+  const els = kbEls.get(code);
+  if (!els) return;
+  const on = pressed.has(code) || !!mods[code];
+  els.forEach(el => {
+    el.classList.toggle('dn', on);
+    el.classList.toggle('lock', mods[code] === 2);
+  });
+}
+
+function kbVisAll() {
+  for (const c of kbEls.keys()) kbVis(c);
+}
+
+function onMouse(l, m, r) {
+  const now = performance.now();
+  if (l && !mprev.l) mclicks.l.push(now);
+  if (r && !mprev.r) mclicks.r.push(now);
+  mprev.l = !!l; mprev.m = !!m; mprev.r = !!r;
+  msEls.l.forEach(e => e.classList.toggle('dn', !!l));
+  msEls.m.forEach(e => e.classList.toggle('dn', !!m));
+  msEls.r.forEach(e => e.classList.toggle('dn', !!r));
+}
+
+function buildKb() {
+  const wide = $('#stage').clientWidth > $('#stage').clientHeight * 1.15;
+  kbBody.className = (KBP.mode === 'full' && !wide) ? 'col' : '';
+  kbBody.innerHTML = KBP.mode === 'mini' ? miniHTML() : fullKeysHTML() + fullMouseHTML();
+
+  kbEls = new Map();
+  kbBody.querySelectorAll('[data-code]').forEach(el => {
+    const c = el.dataset.code;
+    if (!kbEls.has(c)) kbEls.set(c, []);
+    kbEls.get(c).push(el);
+  });
+  msEls = { l: [], m: [], r: [] };
+  kbBody.querySelectorAll('[data-mb]').forEach(el => msEls[el.dataset.mb].push(el));
+
+  kbVisAll();
+  onMouse(mprev.l, mprev.m, mprev.r);
+
+  $('#kbMode').textContent = KBP.mode === 'mini' ? 'Full' : 'Mini';
+  $('#kbSize').textContent = KBP.size;
+  $('#kbFn').classList.toggle('on', KBP.fn);
+  $('#kbNav').classList.toggle('on', KBP.nav);
+  $('#kbFn').style.display = $('#kbNav').style.display = KBP.mode === 'full' ? '' : 'none';
+  $('#bKeys').classList.toggle('on', KBP.on);
+  kbo.style.opacity = [1, .75, .5, .3][KBP.op % 4];
+}
+
+function layoutKb() {
+  const box = $('#stage');
+  const bw = box.clientWidth, bh = box.clientHeight;
+  if (!bw || !bh) return;
+
+  const mul = { S: .55, M: .78, L: 1 }[KBP.size] || .78;
+  let u;
+
+  if (KBP.mode === 'mini') {
+    u = { S: 26, M: 34, L: 44 }[KBP.size] || 34;
+  } else {
+    const wide = bw > bh * 1.15;
+    const units = wide ? 22.2 : 18.8;
+    u = Math.max(9, Math.min(36, (bw * .97 - 14) / units) * mul);
+  }
+
+  kbo.style.setProperty('--u', u.toFixed(1) + 'px');
+
+  /* position: remembered fraction, else bottom centre; always kept inside the stage */
+  const w = kbo.offsetWidth, h = kbo.offsetHeight;
+  let x = KBP.x == null ? (bw - w) / 2 : KBP.x * bw;
+  let y = KBP.y == null ? bh - h - 6 : KBP.y * bh;
+  x = Math.min(Math.max(0, x), Math.max(0, bw - w));
+  y = Math.min(Math.max(0, y), Math.max(0, bh - h));
+  kbo.style.left = x + 'px';
+  kbo.style.top = y + 'px';
+}
+
+function showKb() {
+  kbo.classList.toggle('on', KBP.on);
+  $('#bKeys').classList.toggle('on', KBP.on);
+  if (KBP.on) { buildKb(); layoutKb(); requestAnimationFrame(layoutKb); }
+}
+
+/* --- key / mouse presses (multi-touch, hold, auto-repeat) --- */
+const held = new Map();
+
+function holdStart(pid, entry, repeatFn) {
+  entry.t = setTimeout(() => { entry.r = setInterval(repeatFn, 65); }, 420);
+  held.set(pid, entry);
+}
+
+function holdStop(pid) {
+  const e = held.get(pid);
+  if (!e) return;
+  clearTimeout(e.t); clearInterval(e.r);
+  held.delete(pid);
+  if (e.up) e.up();
+}
+
+function modTap(code) {
+  const s = mods[code] || 0;
+  if (s === 0) { mods[code] = 1; sendMake(code); }
+  else if (s === 1) { mods[code] = 2; kbVis(code); }
+  else { mods[code] = 0; sendBreak(code); }
+}
+
+kbBody.addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-code],[data-mb],[data-w]');
+  if (!el || !emu) return;
+  e.preventDefault();
+  e.stopPropagation();
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+
+  if (el.dataset.code) {
+    const code = el.dataset.code;
+    if (MODKEYS.has(code)) { modTap(code); return; }
+    sendMake(code);
+    holdStart(e.pointerId, { up: () => { sendBreak(code); releaseAllMods(); } }, () => sendMake(code));
+  } else if (el.dataset.mb) {
+    const b = el.dataset.mb;
+    const s = { l: mprev.l, m: mprev.m, r: mprev.r };
+    s[b] = true;
+    click(s.l, s.m, s.r);
+    held.set(e.pointerId, { up: () => { const q = { l: mprev.l, m: mprev.m, r: mprev.r }; q[b] = false; click(q.l, q.m, q.r); } });
+  } else {
+    const d = +el.dataset.w;
+    const go = () => emu && emu.bus.send('mouse-wheel', [d, 0]);
+    go();
+    holdStart(e.pointerId, {}, go);
+  }
+});
+
+const kbUp = e => holdStop(e.pointerId);
+kbBody.addEventListener('pointerup', kbUp);
+kbBody.addEventListener('pointercancel', kbUp);
+kbBody.addEventListener('contextmenu', e => e.preventDefault());
+
+/* keep touches on the overlay away from the trackpad handlers underneath */
+['touchstart', 'touchmove', 'touchend'].forEach(ev => kbo.addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+
+/* --- header: drag, mode, size, opacity, toggles --- */
+let drag = null;
+$('#kbHead').addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  e.preventDefault();
+  try { $('#kbHead').setPointerCapture(e.pointerId); } catch (err) {}
+  drag = { px: e.clientX, py: e.clientY, x: kbo.offsetLeft, y: kbo.offsetTop };
+});
+$('#kbHead').addEventListener('pointermove', e => {
+  if (!drag) return;
+  const box = $('#stage');
+  const x = Math.min(Math.max(0, drag.x + e.clientX - drag.px), Math.max(0, box.clientWidth - kbo.offsetWidth));
+  const y = Math.min(Math.max(0, drag.y + e.clientY - drag.py), Math.max(0, box.clientHeight - kbo.offsetHeight));
+  kbo.style.left = x + 'px';
+  kbo.style.top = y + 'px';
+});
+const dragEnd = () => {
+  if (!drag) return;
+  drag = null;
+  const box = $('#stage');
+  KBP.x = kbo.offsetLeft / box.clientWidth;
+  KBP.y = kbo.offsetTop / box.clientHeight;
+  saveKbp();
+};
+$('#kbHead').addEventListener('pointerup', dragEnd);
+$('#kbHead').addEventListener('pointercancel', dragEnd);
+
+const kbRefresh = () => { saveKbp(); buildKb(); layoutKb(); requestAnimationFrame(layoutKb); };
+$('#kbMode').onclick = () => { KBP.mode = KBP.mode === 'mini' ? 'full' : 'mini'; KBP.x = KBP.y = null; kbRefresh(); };
+$('#kbSize').onclick = () => { KBP.size = { S: 'M', M: 'L', L: 'S' }[KBP.size] || 'M'; kbRefresh(); };
+$('#kbOp').onclick = () => { KBP.op = (KBP.op + 1) % 4; kbRefresh(); };
+$('#kbFn').onclick = () => { KBP.fn = !KBP.fn; kbRefresh(); };
+$('#kbNav').onclick = () => { KBP.nav = !KBP.nav; kbRefresh(); };
+$('#kbX').onclick = () => { KBP.on = false; saveKbp(); showKb(); };
+$('#bKeys').onclick = () => { KBP.on = !KBP.on; saveKbp(); showKb(); };
+$('#kbCad').onclick = () => {
+  if (!emu) return;
+  const seq = ['ControlLeft', 'AltLeft', 'Delete'];
+  seq.forEach(sendMake);
+  setTimeout(() => seq.slice().reverse().forEach(sendBreak), 80);
+};
+
+setInterval(() => {
+  if (!kbo.classList.contains('on') || KBP.mode !== 'mini') return;
+  const now = performance.now();
+  for (const b of ['l', 'r']) {
+    mclicks[b] = mclicks[b].filter(x => now - x < 1000);
+    const el = kbBody.querySelector(`[data-cps="${b}"]`);
+    if (el && el.textContent !== String(mclicks[b].length)) el.textContent = mclicks[b].length;
+  }
+}, 120);
+
+addEventListener('resize', () => { if (KBP.on) { buildKb(); layoutKb(); } });
+addEventListener('orientationchange', () => setTimeout(() => { if (KBP.on) { buildKb(); layoutKb(); } }, 350));
 
 /* ---------- Android soft keyboard ---------- */
 const ta = $('#ta');
@@ -1314,10 +2036,11 @@ addEventListener('blur', () => {
   }
 
   physicalDown.clear();
-  releaseAllMods();
+  releaseAllMods(true);
 });
 
 renderGrid();
+updateAppsBtn();
 
 window.__pc = {
   get emu() { return emu; },
