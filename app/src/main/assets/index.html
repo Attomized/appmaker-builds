@@ -223,10 +223,23 @@ const OSES = [
     tag: 'your file', mem: 512, custom: true, blank: true }
 ];
 
-/* ---------- FAT16 disk builder: files -> MBR disk image (long names, folders) ---------- */
-async function buildFat16(entries, freeBytes, label) {
-  const SS = 512, SPT = 63, HEADS = 16, CYLS = SPT * HEADS, ROOTENT = 512;
-  const MAXT = 1024 * CYLS;                       // 504 MiB: keeps CHS valid for DOS / Win9x
+/* ---------- FAT disk builder: files -> lazy MBR disk (FAT16 up to ~2 GB, FAT32 above) ----------
+   The disk is a File made of pieces (metadata in memory, file data referenced as Blobs),
+   so big libraries are never copied into RAM. */
+async function buildFatDisk(entries, freeBytes, label, opts) {
+  opts = opts || {};
+  const SS = 512, SPT = 63, ROOTENT = 512, MB1 = 1048576;
+  const CYLS16 = SPT * 16;
+  const SMALL_T = 1024 * CYLS16;                       // 504 MiB: legacy CHS still valid
+  const MAX16_T = 4150000;                             // ~1.98 GiB: FAT16 cluster limit with 32 KB clusters
+  const MAX32_T = (16 * 1024 * MB1) / SS;              // 16 GiB cap
+  const zero1 = opts.zeroBlob || new Blob([new Uint8Array(MB1)]);
+  const zeros = n => {
+    const out = [], full = Math.floor(n / MB1);
+    for (let i = 0; i < full; i++) out.push(zero1);
+    if (n - full * MB1 > 0) out.push(new Uint8Array(n - full * MB1));
+    return out;
+  };
   const BAD = /[\\\/:*?"<>|\u0000-\u001f]/g;
   const clean = s => {
     s = String(s).replace(BAD, '_').replace(/[. ]+$/, '');
@@ -234,7 +247,7 @@ async function buildFat16(entries, freeBytes, label) {
     return s || '_';
   };
 
-  /* 1. build tree */
+  /* 1. tree */
   const mkDir = (name, mtime) => ({ name, isDir: true, dirs: new Map(), files: new Map(), mtime: mtime || Date.now() });
   const root = mkDir('', Date.now());
   let nfiles = 0, ndirs = 0, totalData = 0;
@@ -250,11 +263,11 @@ async function buildFat16(entries, freeBytes, label) {
     }
     const key = fname.toLowerCase();
     if (!d.files.has(key)) nfiles++; else totalData -= d.files.get(key).size;
-    d.files.set(key, { name: fname, isDir: false, size: e.size, read: e.read, mtime: e.mtime || Date.now() });
+    d.files.set(key, { name: fname, isDir: false, size: e.size, blob: e.blob, data: e.data, mtime: e.mtime || Date.now() });
     totalData += e.size;
   }
 
-  /* 2. short (8.3) names + LFN need */
+  /* 2. 8.3 names + long names */
   const OK83 = /^[A-Z0-9$%'\-_@~`!(){}^#&]+$/;
   function shortFor(name, used) {
     const dot = name.lastIndexOf('.');
@@ -287,115 +300,166 @@ async function buildFat16(entries, freeBytes, label) {
   (function prep(d, isRoot) {
     d.isRoot = isRoot;
     const used = new Set();
-    const kids = [...d.dirs.values(), ...d.files.values()];
-    d.kids = kids;
-    let count = isRoot ? 1 : 2;                    // label entry / '.' and '..'
-    for (const k of kids) {
+    d.kids = [...d.dirs.values(), ...d.files.values()];
+    let count = isRoot ? 1 : 2;
+    for (const k of d.kids) {
       const s = shortFor(k.name, used);
       k.s = s; k.lfn = k.name !== s.short;
       count += 1 + (k.lfn ? Math.ceil(k.name.length / 13) : 0);
     }
     d.entries = count;
-    if (isRoot && count > ROOTENT) throw new Error('Too many items in the top folder (max ~' + Math.floor(ROOTENT / 2) + '). Put them in a zip.');
     allDirs.push(d);
     for (const c of d.dirs.values()) prep(c, false);
   })(root, true);
+  if (root.entries > ROOTENT && opts.force !== 'fat32') root.rootOverflow = true;
 
-  /* 3. geometry, grow disk until everything fits */
+  /* 3. choose FAT type and size */
   const roundUp = (n, m) => Math.ceil(n / m) * m;
-  let T = roundUp(Math.max(64 * 1048576, totalData + freeBytes + (nfiles + ndirs) * 8192) / SS, CYLS);
+  const dirClusters = (d, cb) => Math.max(1, Math.ceil(d.entries * 32 / cb));
+  let fat32 = opts.force === 'fat32' || !!root.rootOverflow;
+  let T = Math.ceil((totalData + freeBytes + (nfiles + ndirs) * (fat32 ? 8192 : 16384) + 4 * MB1) / SS);
+  T = Math.max(T, fat32 ? 40 * MB1 / SS : 64 * MB1 / SS);
+  T = roundUp(T, CYLS16);
+  if (!fat32 && T > MAX16_T) fat32 = true;
+  if (fat32) T = Math.max(T, 40 * MB1 / SS);
   let geo = null;
-  for (let attempt = 0; attempt < 8; attempt++) {
-    if (T > MAXT) {
-      if (T - MAXT > 4 * CYLS && attempt > 0 && geo === null) throw new Error('Too much data. The apps drive can hold about 500 MB.');
-      T = MAXT;
-    }
+
+  for (let attempt = 0; attempt < 12 && !geo; attempt++) {
+    if (!fat32 && T > MAX16_T) fat32 = true;
+    if (T > MAX32_T) throw new Error('Too much data. The apps drive can hold about 16 GB.');
     const P = T - 63;
-    let spc = 1, fatsec = 0, clusters = 0;
-    for (spc = 1; spc <= 64; spc *= 2) {
-      fatsec = 1;
-      for (let i = 0; i < 5; i++) {
+    let spc, fatsec, clusters;
+    if (!fat32) {
+      for (spc = 1; spc <= 64; spc *= 2) {
+        fatsec = 1;
+        for (let i = 0; i < 5; i++) { clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc); fatsec = Math.ceil((clusters + 2) * 2 / SS); }
         clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc);
-        fatsec = Math.ceil((clusters + 2) * 2 / SS);
+        if (clusters <= 65000) break;
       }
-      clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc);
-      if (clusters <= 65000) break;
+      if (clusters > 65000) { fat32 = true; continue; }
+    } else {
+      const bytes = P * SS;
+      const tspc = bytes <= 8 * 1024 * MB1 ? 8 : bytes <= 16 * 1024 * MB1 ? 16 : 32;
+      for (spc = tspc; spc >= 1; spc >>= 1) {
+        fatsec = 1;
+        for (let i = 0; i < 6; i++) { clusters = Math.floor((P - 32 - 2 * fatsec) / spc); fatsec = Math.ceil((clusters + 2) * 4 / SS); }
+        clusters = Math.floor((P - 32 - 2 * fatsec) / spc);
+        if (clusters >= 66000) break;
+      }
+      if (clusters < 65600) throw new Error('Disk too small for FAT32');
     }
     const cb = spc * SS;
-    let need = 0;
-    for (const d of allDirs) { if (!d.isRoot) need += Math.max(1, Math.ceil(d.entries * 32 / cb)); for (const f of d.files.values()) need += Math.ceil(f.size / cb); }
-    if (need <= clusters && clusters >= 4085) { geo = { P, spc, fatsec, clusters, cb }; break; }
-    if (T >= MAXT) throw new Error('Too much data. The apps drive can hold about 500 MB.');
-    T = roundUp(T * 1.25, CYLS);
+    let need = fat32 ? dirClusters(root, cb) : 0;
+    for (const d of allDirs) {
+      if (!d.isRoot) need += dirClusters(d, cb);
+      for (const f of d.files.values()) need += Math.ceil(f.size / cb);
+    }
+    if (!fat32 && root.entries > ROOTENT) { fat32 = true; continue; }
+    if (need <= clusters) { geo = { P, spc, fatsec, clusters, cb }; break; }
+    T = roundUp(Math.ceil(T * 1.2), CYLS16);
   }
   if (!geo) throw new Error('Could not size the disk');
   const { P, spc, fatsec, clusters, cb } = geo;
 
-  /* 4. allocate clusters */
-  const fat = new Uint16Array(clusters + 2);
-  fat[0] = 0xFFF8; fat[1] = 0xFFFF;
+  /* 4. allocate clusters (order == order on disk) */
+  const fat = fat32 ? new Uint32Array(clusters + 2) : new Uint16Array(clusters + 2);
+  const EOC = fat32 ? 0x0FFFFFFF : 0xFFFF;
+  fat[0] = fat32 ? 0x0FFFFFF8 : 0xFFF8; fat[1] = EOC;
   let next = 2;
+  const order = [];
   const alloc = n => {
     if (n <= 0) return 0;
     const s = next;
-    for (let i = 0; i < n; i++) fat[s + i] = (i === n - 1) ? 0xFFFF : s + i + 1;
+    for (let i = 0; i < n; i++) fat[s + i] = (i === n - 1) ? EOC : s + i + 1;
     next += n;
     return s;
   };
   (function place(d) {
-    if (!d.isRoot) d.start = alloc(Math.max(1, Math.ceil(d.entries * 32 / cb)));
-    for (const f of d.files.values()) f.start = alloc(Math.ceil(f.size / cb));
+    if (!d.isRoot || fat32) { d.start = alloc(dirClusters(d, cb)); d.ncl = dirClusters(d, cb); order.push(d); }
+    for (const f of d.files.values()) { f.start = alloc(Math.ceil(f.size / cb)); if (f.size) order.push(f); }
     for (const c of d.dirs.values()) place(c);
   })(root);
 
-  /* 5. write image */
-  const img = new Uint8Array(T * SS);
-  const dv = new DataView(img.buffer);
+  /* 5. header (everything before the data area) */
+  const dataRel = (fat32 ? 32 : 1 + 32) + 2 * fatsec;   // sectors from partition start to cluster 2 (FAT16: 1 + root 32)
+  const rsvd = fat32 ? 32 : 1;
+  const hdrBytes = (63 + (fat32 ? 32 + 2 * fatsec : 1 + 2 * fatsec + 32)) * SS;
+  const hdr = new Uint8Array(hdrBytes);
+  const hv = new DataView(hdr.buffer);
+  const small = T <= SMALL_T;
+  const HEADS = small ? 16 : 255;
+
   // MBR
-  const endCyl = T / CYLS - 1;
   const p = 446;
-  img[p] = 0x00; img[p + 1] = 1; img[p + 2] = 1; img[p + 3] = 0; img[p + 4] = 0x06;
-  img[p + 5] = HEADS - 1; img[p + 6] = SPT | ((endCyl >> 8) & 3) << 6; img[p + 7] = endCyl & 255;
-  dv.setUint32(p + 8, 63, true); dv.setUint32(p + 12, P, true);
-  img[0] = 0xCD; img[1] = 0x18;                 // not bootable: INT 18h lets the BIOS try the next device
-  img[510] = 0x55; img[511] = 0xAA;
+  hdr[0] = 0xCD; hdr[1] = 0x18;                         // not bootable: INT 18h makes the BIOS try the next device
+  hdr[p + 1] = 1; hdr[p + 2] = 1; hdr[p + 3] = 0;
+  hdr[p + 4] = fat32 ? (small ? 0x0B : 0x0C) : (small ? 0x06 : 0x0E);
+  if (small) {
+    const endCyl = T / CYLS16 - 1;
+    hdr[p + 5] = 15; hdr[p + 6] = SPT | ((endCyl >> 8) & 3) << 6; hdr[p + 7] = endCyl & 255;
+  } else { hdr[p + 5] = 0xFE; hdr[p + 6] = 0xFF; hdr[p + 7] = 0xFF; }
+  hv.setUint32(p + 8, 63, true); hv.setUint32(p + 12, P, true);
+  hdr[510] = 0x55; hdr[511] = 0xAA;
+
   // boot sector
   const bs = 63 * SS;
-  img[bs] = 0xEB; img[bs + 1] = 0x3C; img[bs + 2] = 0x90;
-  [...'MSDOS5.0'].forEach((c, i) => img[bs + 3 + i] = c.charCodeAt(0));
-  dv.setUint16(bs + 11, SS, true); img[bs + 13] = spc; dv.setUint16(bs + 14, 1, true); img[bs + 16] = 2;
-  dv.setUint16(bs + 17, ROOTENT, true); dv.setUint16(bs + 19, P < 65536 ? P : 0, true); img[bs + 21] = 0xF8;
-  dv.setUint16(bs + 22, fatsec, true); dv.setUint16(bs + 24, SPT, true); dv.setUint16(bs + 26, HEADS, true);
-  dv.setUint32(bs + 28, 63, true); dv.setUint32(bs + 32, P < 65536 ? 0 : P, true);
-  img[bs + 36] = 0x80; img[bs + 38] = 0x29; dv.setUint32(bs + 39, (Date.now() & 0x7fffffff) >>> 0, true);
+  hdr[bs] = 0xEB; hdr[bs + 1] = fat32 ? 0x58 : 0x3C; hdr[bs + 2] = 0x90;
+  [...'MSDOS5.0'].forEach((c, i) => hdr[bs + 3 + i] = c.charCodeAt(0));
+  hv.setUint16(bs + 11, SS, true); hdr[bs + 13] = spc; hv.setUint16(bs + 14, rsvd, true); hdr[bs + 16] = 2;
+  hv.setUint16(bs + 17, fat32 ? 0 : ROOTENT, true);
+  hv.setUint16(bs + 19, (!fat32 && P < 65536) ? P : 0, true);
+  hdr[bs + 21] = 0xF8;
+  hv.setUint16(bs + 22, fat32 ? 0 : fatsec, true);
+  hv.setUint16(bs + 24, SPT, true); hv.setUint16(bs + 26, HEADS, true);
+  hv.setUint32(bs + 28, 63, true);
+  hv.setUint32(bs + 32, (!fat32 && P < 65536) ? 0 : P, true);
   const lab = (label || 'MYAPPS').toUpperCase().replace(/[^A-Z0-9_ ]/g, '_').slice(0, 11).padEnd(11, ' ');
-  [...lab].forEach((c, i) => img[bs + 43 + i] = c.charCodeAt(0));
-  [...'FAT16   '].forEach((c, i) => img[bs + 54 + i] = c.charCodeAt(0));
-  img[bs + 62] = 0xCD; img[bs + 63] = 0x18;
-  img[bs + 510] = 0x55; img[bs + 511] = 0xAA;
-  // FATs
-  const fat0 = bs + SS;
-  for (let i = 0; i < fat.length; i++) { dv.setUint16(fat0 + i * 2, fat[i], true); dv.setUint16(fat0 + fatsec * SS + i * 2, fat[i], true); }
-  const rootOff = bs + (1 + 2 * fatsec) * SS;
-  const dataOff = rootOff + 32 * SS;
-  const clOff = c => dataOff + (c - 2) * cb;
+  const serial = (Date.now() & 0x7fffffff) >>> 0;
+  if (!fat32) {
+    hdr[bs + 36] = 0x80; hdr[bs + 38] = 0x29; hv.setUint32(bs + 39, serial, true);
+    [...lab].forEach((c, i) => hdr[bs + 43 + i] = c.charCodeAt(0));
+    [...'FAT16   '].forEach((c, i) => hdr[bs + 54 + i] = c.charCodeAt(0));
+    hdr[bs + 62] = 0xCD; hdr[bs + 63] = 0x18;
+  } else {
+    hv.setUint32(bs + 36, fatsec, true); hv.setUint32(bs + 44, 2, true);
+    hv.setUint16(bs + 48, 1, true); hv.setUint16(bs + 50, 6, true);
+    hdr[bs + 64] = 0x80; hdr[bs + 66] = 0x29; hv.setUint32(bs + 67, serial, true);
+    [...lab].forEach((c, i) => hdr[bs + 71 + i] = c.charCodeAt(0));
+    [...'FAT32   '].forEach((c, i) => hdr[bs + 82 + i] = c.charCodeAt(0));
+    hdr[bs + 90] = 0xCD; hdr[bs + 91] = 0x18;
+  }
+  hdr[bs + 510] = 0x55; hdr[bs + 511] = 0xAA;
+  if (fat32) {
+    const fi = bs + SS;                                   // FSInfo
+    hv.setUint32(fi, 0x41615252, true); hv.setUint32(fi + 484, 0x61417272, true);
+    hv.setUint32(fi + 488, 0xFFFFFFFF, true); hv.setUint32(fi + 492, 0xFFFFFFFF, true);
+    hdr[fi + 510] = 0x55; hdr[fi + 511] = 0xAA; hdr[fi + 508] = 0; hdr[fi + 509] = 0;
+    hdr.copyWithin(bs + 6 * SS, bs, bs + SS);             // backup boot sector
+    hdr.copyWithin(bs + 7 * SS, fi, fi + SS);             // backup FSInfo
+  }
 
+  // FATs
+  const fat0 = bs + rsvd * SS;
+  const fatBytes = new Uint8Array(fat.buffer, fat.byteOffset, fat.byteLength);
+  hdr.set(fatBytes, fat0);
+  hdr.set(fatBytes, fat0 + fatsec * SS);
+  const rootOff = bs + (rsvd + 2 * fatsec) * SS;           // FAT16 only
+
+  /* 6. directory writers */
   const dosDT = ms => {
     const d = new Date(ms || Date.now());
     let y = d.getFullYear(); if (y < 1980) y = 1980; if (y > 2107) y = 2107;
-    return {
-      date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(),
-      time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)
-    };
+    return { date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1) };
   };
-  const put83 = (off, base, ext, attr, start, size, ms) => {
-    const n = (base.padEnd(8, ' ') + ext.padEnd(3, ' '));
-    for (let i = 0; i < 11; i++) img[off + i] = n.charCodeAt(i);
-    img[off + 11] = attr;
+  const put83 = (buf, dv, off, base, ext, attr, start, size, ms) => {
+    const n = base.padEnd(8, ' ') + ext.padEnd(3, ' ');
+    for (let i = 0; i < 11; i++) buf[off + i] = n.charCodeAt(i);
+    buf[off + 11] = attr;
     const t = dosDT(ms);
     dv.setUint16(off + 14, t.time, true); dv.setUint16(off + 16, t.date, true); dv.setUint16(off + 18, t.date, true);
+    dv.setUint16(off + 20, (start >>> 16) & 0xFFFF, true);
     dv.setUint16(off + 22, t.time, true); dv.setUint16(off + 24, t.date, true);
-    dv.setUint16(off + 26, start, true); dv.setUint32(off + 28, size >>> 0, true);
+    dv.setUint16(off + 26, start & 0xFFFF, true); dv.setUint32(off + 28, size >>> 0, true);
   };
   const csum = (base, ext) => {
     const n = base.padEnd(8, ' ') + ext.padEnd(3, ' ');
@@ -404,48 +468,58 @@ async function buildFat16(entries, freeBytes, label) {
     return s;
   };
   const LPOS = [1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30];
-
-  function writeDir(d, parentStart) {
-    let off = d.isRoot ? rootOff : clOff(d.start);
-    if (d.isRoot) {
-      put83(off, lab.slice(0, 8).trimEnd(), lab.slice(8).trimEnd(), 0x08, 0, 0, Date.now()); off += 32;
-    } else {
-      put83(off, '.', '', 0x10, d.start, 0, d.mtime); off += 32;
-      put83(off, '..', '', 0x10, parentStart, 0, d.mtime); off += 32;
+  function writeDir(d, parentStart, buf, dv, off) {
+    if (d.isRoot) { put83(buf, dv, off, lab.slice(0, 8).trimEnd(), lab.slice(8).trimEnd(), 0x08, 0, 0, Date.now()); off += 32; }
+    else {
+      put83(buf, dv, off, '.', '', 0x10, d.start, 0, d.mtime); off += 32;
+      put83(buf, dv, off, '..', '', 0x10, parentStart, 0, d.mtime); off += 32;
     }
     for (const k of d.kids) {
       if (k.lfn) {
         const u = []; for (let i = 0; i < k.name.length; i++) u.push(k.name.charCodeAt(i));
-        const n = Math.ceil(u.length / 13);
-        const cs = csum(k.s.base, k.s.ext);
+        const n = Math.ceil(u.length / 13), cs = csum(k.s.base, k.s.ext);
         for (let o = n; o >= 1; o--) {
-          img[off] = o | (o === n ? 0x40 : 0);
+          buf[off] = o | (o === n ? 0x40 : 0);
           for (let j = 0; j < 13; j++) {
             const idx = (o - 1) * 13 + j;
-            const c = idx < u.length ? u[idx] : (idx === u.length ? 0 : 0xFFFF);
-            dv.setUint16(off + LPOS[j], c, true);
+            dv.setUint16(off + LPOS[j], idx < u.length ? u[idx] : (idx === u.length ? 0 : 0xFFFF), true);
           }
-          img[off + 11] = 0x0F; img[off + 12] = 0; img[off + 13] = cs;
+          buf[off + 11] = 0x0F; buf[off + 12] = 0; buf[off + 13] = cs;
           off += 32;
         }
       }
-      if (k.isDir) put83(off, k.s.base, k.s.ext, 0x10, k.start, 0, k.mtime);
-      else put83(off, k.s.base, k.s.ext, 0x20, k.start || 0, k.size, k.mtime);
+      if (k.isDir) put83(buf, dv, off, k.s.base, k.s.ext, 0x10, k.start, 0, k.mtime);
+      else put83(buf, dv, off, k.s.base, k.s.ext, 0x20, k.start || 0, k.size, k.mtime);
       off += 32;
     }
   }
-  const writeAll = async (d, parentStart) => {
-    writeDir(d, parentStart);
-    for (const f of d.files.values()) {
-      if (!f.size) continue;
-      const data = await f.read();
-      if (data.length !== f.size) throw new Error('File changed while reading: ' + f.name);
-      img.set(data, clOff(f.start));
+  const parentOf = new Map();
+  (function link(d) { for (const c of d.dirs.values()) { parentOf.set(c, d); link(c); } })(root);
+  if (!fat32) writeDir(root, 0, hdr, hv, rootOff);
+
+  /* 7. assemble the disk from pieces */
+  const parts = [hdr];
+  let pos = hdr.length;
+  for (const o of order) {
+    if (o.isDir) {
+      const buf = new Uint8Array(o.ncl * cb), dv = new DataView(buf.buffer);
+      const par = parentOf.get(o);
+      writeDir(o, !par || par.isRoot ? 0 : par.start, buf, dv, 0);
+      parts.push(buf); pos += buf.length;
+    } else {
+      const src = o.blob || o.data;
+      if (!src) throw new Error('No data for ' + o.name);
+      if ((src.size !== undefined ? src.size : src.length) !== o.size) throw new Error('File changed while reading: ' + o.name);
+      parts.push(src); pos += o.size;
+      const pad = Math.ceil(o.size / cb) * cb - o.size;
+      if (pad) { parts.push(new Uint8Array(pad)); pos += pad; }
     }
-    for (const c of d.dirs.values()) await writeAll(c, d.isRoot ? 0 : d.start);
-  };
-  await writeAll(root, 0);
-  return { image: img, usedClusters: next - 2, totalClusters: clusters, clusterBytes: cb };
+  }
+  const total = T * SS;
+  if (pos > total) throw new Error('Disk layout overflow');
+  for (const z of zeros(total - pos)) parts.push(z);
+  const file = new File(parts, 'apps.img');
+  return { file, parts, size: total, fatType: fat32 ? 32 : 16, usedClusters: next - 2, totalClusters: clusters, clusterBytes: cb };
 }
 
 /* ---------- state ---------- */
@@ -562,24 +636,71 @@ function loadFflate() {
   }));
 }
 
+/* streaming unzip: memory stays small even for multi-GB zips */
+function unzipStream(f, ff) {
+  return new Promise((resolve, reject) => {
+    const out = [];
+    const pending = [];
+    const uz = new ff.Unzip();
+    uz.register(ff.UnzipInflate);
+    if (ff.UnzipPassThrough) uz.register(ff.UnzipPassThrough);
+
+    uz.onfile = file => {
+      if (file.name.endsWith('/')) return;
+      let blob = new Blob([]), chunks = [], held = 0, size = 0;
+
+      pending.push(new Promise((res, rej) => {
+        file.ondata = (err, chunk, final) => {
+          if (err) return rej(err);
+          chunks.push(chunk.slice());
+          held += chunk.length;
+          size += chunk.length;
+          if (held > 32 * 1048576 || final) { blob = new Blob([blob, ...chunks]); chunks = []; held = 0; }
+          if (final) { out.push({ name: file.name, blob, size }); res(); }
+        };
+        file.start();
+      }));
+    };
+
+    (async () => {
+      try {
+        const CH = 8 * 1048576;
+        for (let off = 0; off < f.size; off += CH) {
+          const buf = new Uint8Array(await f.slice(off, off + CH).arrayBuffer());
+          uz.push(buf, off + CH >= f.size);
+        }
+        await Promise.all(pending);
+        resolve(out);
+      } catch (e) { reject(e); }
+    })();
+  });
+}
+
 async function importFiles(list) {
   const recs = [];
 
   for (const f of list) {
-    toast('Reading ' + f.name + '…', 10000);
+    toast('Reading ' + f.name + '…', 15000);
     await appsDelGroup(f.name);
 
     if (/\.zip$/i.test(f.name)) {
       const ff = await loadFflate();
-      const out = ff.unzipSync(new Uint8Array(await f.arrayBuffer()));
-      const paths = Object.keys(out).filter(p => !p.endsWith('/') && !/(^|\/)(__MACOSX|\.DS_Store)(\/|$)/.test(p));
-      const tops = new Set(paths.map(p => p.split('/')[0]));
-      const hasRootFile = paths.some(p => !p.includes('/'));
+      let items;
+
+      try {
+        items = await unzipStream(f, ff);
+      } catch (e) {
+        /* odd zip layout: fall back to the in-memory unzip */
+        const out = ff.unzipSync(new Uint8Array(await f.arrayBuffer()));
+        items = Object.keys(out).filter(p => !p.endsWith('/')).map(p => ({ name: p, blob: new Blob([out[p]]), size: out[p].length }));
+      }
+
+      items = items.filter(i => !/(^|\/)(__MACOSX|\.DS_Store)(\/|$)/.test(i.name));
+      const tops = new Set(items.map(i => i.name.split('/')[0]));
+      const hasRootFile = items.some(i => !i.name.includes('/'));
       const prefix = (tops.size > 1 || hasRootFile) ? f.name.replace(/\.zip$/i, '') + '/' : '';
 
-      for (const p of paths) {
-        recs.push({ path: prefix + p, group: f.name, blob: new Blob([out[p]]), size: out[p].length });
-      }
+      for (const i of items) recs.push({ path: prefix + i.name, group: f.name, blob: i.blob, size: i.size });
     } else {
       recs.push({ path: f.name, group: f.name, blob: f, size: f.size });
     }
@@ -613,7 +734,7 @@ async function openApps() {
 
   $('#sheetIn').innerHTML = `
     <h2>📁 My Apps</h2>
-    <div style="color:#8b95a9;font-size:13.5px">Add installers, games or .zip files. They stay on your phone and appear as a drive inside any PC you boot (D: on Windows and DOS). Zips are unpacked. Changes made inside the PC are not saved back here. Max about 500 MB total.</div>
+    <div style="color:#8b95a9;font-size:13.5px">Add installers, games or .zip files. They stay on your phone and appear as a drive inside any PC you boot (D: on Windows and DOS). Zips are unpacked. Your files are linked, not copied, so big games are fine (limited only by your phone's storage, up to 16 GB). Changes made inside the PC are not saved back here.</div>
     <div class="row"><label>Add files or .zip</label><div class="file"><input type="file" id="fApps" multiple></div></div>
     ${rows}
     <div class="btns"><button class="btn alt" id="aClose">Close</button></div>`;
@@ -628,7 +749,7 @@ async function openApps() {
       const n = await importFiles(list);
       toast('Added ' + n + ' file' + (n === 1 ? '' : 's'));
     } catch (err) {
-      toast('Import failed: ' + (err.message || err), 5000);
+      toast('Import failed: ' + (err && err.name === 'QuotaExceededError' ? 'not enough phone storage' : (err.message || err)), 6000);
     }
     openApps();
   };
@@ -730,7 +851,10 @@ async function openSheet(o) {
         <option value="16777216">+16 MB free space</option>
         <option value="67108864" selected>+64 MB free space</option>
         <option value="268435456">+256 MB free space</option>
+        <option value="1073741824">+1 GB free space</option>
+        <option value="4294967296">+4 GB free space</option>
       </select>
+      <label id="appsBig" style="display:none">Over about 500 MB: DOS and Windows 3.1 can't see the drive. Over about 2 GB: Windows 95 can't either. Windows 98 and newer, ReactOS and Linux can.</label>
       <label id="appsNote" style="display:none">Snapshots cannot take a new drive. Choose Fresh boot to attach My Apps.</label>
     </div>` : ''}
 
@@ -761,8 +885,11 @@ async function openSheet(o) {
     const inst = !!($('#mode') && $('#mode').value === 'instant');
     c.disabled = inst;
     $('#appsNote').style.display = inst ? 'block' : 'none';
+    const tot = libSize + +$('#appsFree').value;
+    $('#appsBig').style.display = (!inst && tot > 500 * 1048576) ? 'block' : 'none';
   };
   if ($('#mode')) $('#mode').onchange = syncApps;
+  if ($('#appsFree')) $('#appsFree').onchange = syncApps;
   syncApps();
 
   const bootOpts = resume => {
@@ -982,22 +1109,23 @@ async function boot(o, opt) {
     }
 
     if (opt.apps) {
-      ov('Preparing My Apps drive…', 'Packing your files into a disk', 15);
+      ov('Preparing My Apps drive…', 'Linking your files into a disk (no copying)', 15);
       await new Promise(r => setTimeout(r, 30));
       const recs = await appsAll();
       const entries = recs.map(r => ({
         path: r.path,
         size: r.blob.size,
         mtime: r.blob.lastModified || Date.now(),
-        read: async () => new Uint8Array(await r.blob.arrayBuffer())
+        blob: r.blob
       }));
-      const built = await buildFat16(entries, opt.appsFree || 67108864, 'MYAPPS');
+      const built = await buildFatDisk(entries, opt.appsFree || 67108864, 'MYAPPS');
+      const drive = { buffer: built.file };
 
       if (!usedHda) {
-        cfg.hda = { buffer: built.image.buffer };
+        cfg.hda = drive;
         usedHda = true;
       } else {
-        cfg.hdb = { buffer: built.image.buffer };
+        cfg.hdb = drive;
       }
     }
 
@@ -2043,6 +2171,7 @@ renderGrid();
 updateAppsBtn();
 
 window.__pc = {
+  buildFatDisk,
   get emu() { return emu; },
   boot,
   OSES,
