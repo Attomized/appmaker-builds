@@ -1,933 +1,2712 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Mc</title><style>html,body{margin:0;min-height:100%}</style></head><body>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0d12">
+<title>PC Launcher</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0b0d12;color:#e8ecf4;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+#home{position:fixed;inset:0;overflow:auto;padding:max(18px,env(safe-area-inset-top)) 16px 40px}
+h1{margin:6px 0 2px;font-size:26px;letter-spacing:-.5px}
+.sub{color:#8b95a9;margin:0 0 18px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{background:#141824;border:1px solid #232a3b;border-radius:16px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:118px}
+.card:active{transform:scale(.97);background:#1a2030}
+.card .ic{font-size:30px}
+.card b{font-size:16px}
+.card span.d{color:#8b95a9;font-size:12.5px}
+.tag{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:99px;background:#1f2a44;color:#9db7ff;margin-top:auto;align-self:flex-start}
+.tag.on{background:#183a2c;color:#7ee2ae}
+.tag.warn{background:#3a2d18;color:#f0c27a}
+.note{margin:22px 0 0;padding:12px 14px;background:#10141f;border:1px solid #1f2637;border-radius:12px;color:#97a2b8;font-size:13px}
+.note b{color:#cfd7e6}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:20}
+#sheet.open{display:flex}
+#sheet .in{width:100%;max-height:88%;overflow:auto;background:#121621;border-radius:20px 20px 0 0;padding:18px 16px max(22px,env(safe-area-inset-bottom));border-top:1px solid #2a3248}
+#sheet h2{margin:0 0 4px;font-size:20px}
+.row{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.row label{font-size:12.5px;color:#8b95a9}
+.row select,.row input[type=text]{background:#0b0d12;border:1px solid #2a3248;border-radius:10px;padding:10px;width:100%}
+.file{display:flex;align-items:center;gap:10px;background:#0b0d12;border:1px dashed #36405a;border-radius:10px;padding:10px}
+.file input{flex:1;min-width:0;font-size:13px}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;border:0;border-radius:12px;padding:13px;font-weight:600;background:#2b6cff;color:#fff;cursor:pointer}
+.btn.alt{background:#222a3d;color:#dbe3f5}
+.btn:disabled{opacity:.4}
+#run{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
+#run.on{display:flex}
+#top,#keys{display:flex;gap:6px;padding:6px;background:#0f121a;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+#top{padding-top:max(6px,env(safe-area-inset-top))}
+#keys{padding-bottom:max(6px,env(safe-area-inset-bottom))}
+#top::-webkit-scrollbar,#keys::-webkit-scrollbar{display:none}
+.k{flex:0 0 auto;min-width:42px;height:38px;padding:0 11px;border:1px solid #2a3248;border-radius:9px;background:#1a2030;font-size:13.5px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.k:active{background:#2b6cff}
+.k.on{background:#2b6cff;border-color:#2b6cff}
+#title{flex:1;align-self:center;font-size:13px;color:#8b95a9;padding:0 8px;white-space:nowrap}
+#stage{position:relative;flex:1;min-height:0;overflow:hidden;background:#000;touch-action:none}
+#screen{position:absolute;left:0;top:0;transform-origin:0 0;image-rendering:pixelated}
+#screen canvas{image-rendering:pixelated}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.82);text-align:center;padding:24px;z-index:5}
+#ov.hide{display:none}
+.bar{width:min(320px,80%);height:6px;background:#222a3d;border-radius:9px;overflow:hidden}
+.row .bar{width:100%}
+.bar i{display:block;height:100%;width:0;background:#2b6cff;transition:width .2s}
+#ta{position:fixed;left:-100px;top:0;width:40px;height:40px;opacity:0;font-size:16px}
+#mac{position:fixed;inset:0;background:#000;display:none;flex-direction:column}
+#mac.on{display:flex}
+#mac iframe{flex:1;border:0;width:100%;background:#fff}
+#run.imm #top,#run.imm #keys{display:none}
+#run.imm.menu #top{display:flex;position:absolute;left:0;right:0;top:0;z-index:30;background:rgba(15,18,26,.94)}
+#run.imm.menu #keys{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:30;background:rgba(15,18,26,.94)}
+#fab{display:none;position:absolute;top:max(8px,env(safe-area-inset-top));right:8px;z-index:40;width:38px;height:38px;border-radius:50%;border:1px solid #2a3248;background:rgba(20,24,36,.65);color:#e8ecf4;font-size:17px;padding:0}
+#run.imm #fab{display:block}
+.app{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:#0b0d12;border:1px solid #232a3b;border-radius:10px;margin-bottom:8px;font-size:14px;word-break:break-all}
+.app small{display:block;color:#8b95a9}
+.chk{display:flex;gap:8px;align-items:center;color:#cfd7e6;font-size:14px}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 6px;background:#12151c;border:1px solid #232a3b;border-radius:26px;padding:20px 8px 16px;margin:12px 0}
+.ft{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;cursor:pointer;font-size:12.5px;min-width:0;padding:0 2px;-webkit-tap-highlight-color:transparent}
+.ft .ico{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;transition:opacity .15s,filter .15s}
+.ft .nm{max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.2}
+.ft small{font-size:11px;color:#8b95a9}
+.ft.off .ico{opacity:.35;filter:grayscale(1)}
+.ft .tick{position:absolute;top:-5px;left:calc(50% + 14px);width:22px;height:22px;border-radius:50%;background:#2b6cff;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid #12151c}
+.ft.off .tick{background:#2a3248;color:transparent}
+.ft .del{position:absolute;top:-5px;left:calc(50% - 36px);width:22px;height:22px;border-radius:50%;background:#3a2327;color:#ff8d8d;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #12151c}
+.ft.add .ico{background:transparent;border:2px solid #cfd7e6;border-radius:50%;font-size:32px;font-weight:300}
+.ft.add .tick{display:none}
+#kbo{position:absolute;z-index:4;left:0;top:0;display:none;flex-direction:column;background:rgba(10,12,18,.74);border:1px solid #2a3248;border-radius:10px;padding:4px;touch-action:none;user-select:none;-webkit-user-select:none;--u:30px}
+#kbo.on{display:flex}
+#kbHead{display:flex;align-items:center;gap:4px;margin-bottom:3px;height:22px;cursor:grab;touch-action:none}
+#kbHead b{font-size:10px;color:#8b95a9;letter-spacing:1px;flex:1;white-space:nowrap;overflow:hidden}
+#kbHead button{height:20px;min-width:22px;padding:0 6px;font-size:10px;border:1px solid #2a3248;border-radius:6px;background:#1a2030;touch-action:manipulation}
+#kbHead button.on{background:#2b6cff;border-color:#2b6cff}
+#kbBody{display:flex;align-items:flex-start;gap:calc(var(--u)*.3)}
+#kbBody.col{flex-direction:column;align-items:center}
+.kr{display:flex}
+.kk{flex:0 0 auto;width:calc(var(--u)*var(--w,1) - 2px);height:calc(var(--u) - 2px);margin:1px;border-radius:calc(var(--u)*.16);background:#1c2130;border:1px solid #363e55;color:#dfe5f3;font-size:calc(var(--u)*.36);display:flex;align-items:center;justify-content:center;line-height:1;touch-action:none;box-sizing:border-box;position:relative;overflow:hidden;white-space:nowrap}
+.kk.lg{font-size:calc(var(--u)*.27)}
+#kbBody.col .ms .mm{height:calc(var(--u)*1.5)}
+.kk.sp{visibility:hidden;pointer-events:none}
+.kk.dn,.mbt.dn{background:#2b6cff;border-color:#6d9bff;color:#fff}
+.kk.lock::after{content:'';position:absolute;right:3px;top:3px;width:calc(var(--u)*.16);height:calc(var(--u)*.16);border-radius:50%;background:#7ee2ae}
+.ms{display:flex;flex-direction:column;width:calc(var(--u)*3.2);flex:0 0 auto}
+.ms .mt{display:flex;height:calc(var(--u)*2.1)}
+.mbt{background:#1c2130;border:1px solid #363e55;color:#dfe5f3;touch-action:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*.34)}
+.ms .mt .mbt:first-child{flex:1;border-radius:calc(var(--u)*1.2) 0 0 calc(var(--u)*.3)}
+.ms .mt .mbt:last-child{flex:1;border-radius:0 calc(var(--u)*1.2) calc(var(--u)*.3) 0}
+.ms .wh{width:calc(var(--u)*.7);display:flex;flex-direction:column;border-top:1px solid #363e55;border-bottom:1px solid #363e55}
+.ms .wh i{flex:1;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:calc(var(--u)*.3);color:#aab4cc;touch-action:none;background:#161a26}
+.ms .mm{height:calc(var(--u)*2.4);border:1px solid #363e55;border-top:0;border-radius:0 0 calc(var(--u)*1.1) calc(var(--u)*1.1);background:#161a26;display:flex;align-items:center;justify-content:center;color:#6f7a93;font-size:calc(var(--u)*.3)}
+.ms2{display:flex;flex-direction:column;flex:0 0 auto}
+.ms2 .mbt{width:calc(var(--u)*2.3);height:calc(var(--u)*1.5 - 2px);margin:1px;border-radius:calc(var(--u)*.16);flex-direction:column;gap:2px;line-height:1}
+.ms2 .mbt span{font-size:.8em;opacity:.8}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222a3d;padding:9px 14px;border-radius:99px;font-size:13px;z-index:50;display:none}
+</style>
+</head>
+<body>
+
+<div id="home">
+  <h1>PC Launcher</h1>
+  <p class="sub">Pick an OS. It runs on a real x86 PC emulator right on your phone.</p>
+  <div class="grid" id="grid"></div>
+  <button class="btn alt" id="appsBtn" style="margin-top:16px;width:100%">📁 My Apps</button>
+  <div class="note"><b>Reality check:</b> this is a software PC inside a phone browser, so it is slow. To speed it up: pick lighter systems (KolibriOS, DSL, Windows 3.1 / 95, DOS), use Instant start, keep sound off, and use Full screen. Windows 10/11 and current macOS are not possible here.</div>
+</div>
+
+<div id="sheet"><div class="in" id="sheetIn"></div></div>
+
+<div id="run">
+  <div id="top">
+    <button class="k" id="bHome">✕ Exit</button>
+    <button class="k" id="bPause">⏸</button>
+    <button class="k" id="bKeys">🎹 Keys</button>
+    <button class="k" id="bKb">Aa Phone kb</button>
+    <button class="k" id="bL">L-click</button>
+    <button class="k" id="bR">R-click</button>
+    <button class="k" id="bDrag">Drag</button>
+    <button class="k" id="bSave">💾 Save</button>
+    <button class="k" id="bDisc">💿 Disc</button>
+    <button class="k" id="bFs">⛶ Full</button>
+    <button class="k" id="bFill">↔ Fill</button>
+    <span id="title"></span>
+  </div>
+
+  <div id="stage">
+    <div id="screen">
+      <div style="white-space:pre;font:14px monospace;line-height:14px"></div>
+      <canvas style="display:none"></canvas>
+    </div>
+
+    <div id="kbo">
+      <div id="kbHead">
+        <b id="kbGrip">⠿ KEYS</b>
+        <button id="kbCad" title="Ctrl+Alt+Del">CAD</button>
+        <button id="kbFn">Fn</button>
+        <button id="kbNav">Nav</button>
+        <button id="kbMode">Mini</button>
+        <button id="kbSize">M</button>
+        <button id="kbOp">◐</button>
+        <button id="kbX">✕</button>
+      </div>
+      <div id="kbBody"></div>
+    </div>
+
+    <div id="ov">
+      <div id="ovT">Loading…</div>
+      <div class="bar"><i id="ovB"></i></div>
+      <div id="ovS" style="color:#8b95a9;font-size:12.5px"></div>
+    </div>
+  </div>
+
+  <button id="fab" aria-label="Menu">☰</button>
+  <textarea id="ta" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+</div>
+
+<div id="mac">
+  <div id="top" style="display:flex">
+    <button class="k" id="mBack">✕ Exit</button>
+    <a class="k" id="mOpen" style="display:flex;align-items:center;text-decoration:none;color:inherit" target="_blank" rel="noopener">Open in browser ↗</a>
+    <span id="title">Classic Mac OS (online)</span>
+  </div>
+  <iframe id="mf" allow="cross-origin-isolated; autoplay; fullscreen; clipboard-write" referrerpolicy="no-referrer"></iframe>
+</div>
+
+<div id="toast"></div>
+
 <script>
-package com.blocklands;
+(()=>{
+'use strict';
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.FloatArray;
+const $ = s => document.querySelector(s);
 
-public class BlocklandsGame extends ApplicationAdapter {
+const toast = (t, ms = 2600) => {
+  const e = $('#toast');
+  e.textContent = t;
+  e.style.display = 'block';
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => e.style.display = 'none', ms);
+};
 
-    private static final int VIEW_DISTANCE = 3;
+const HOST = 'https://i.copy.sh/';
+const KB1 = 1024, MB = 1024 * 1024;
+const part = (path, size, cs) => ({ url: HOST + path, size, async: true, fixed_chunk_size: cs, use_parts: true });
+const file = (name, size) => ({ url: HOST + name, size, async: false });
 
-    private PerspectiveCamera cam;
-    private ShapeRenderer shapes;
-    private SpriteBatch batch;
-    private BitmapFont font;
-    private ShaderProgram shader;
+/* Image names/sizes copied from the v86 project's own OS list */
+const OSES = [
+  { id: 'dsl', name: 'Linux Desktop (DSL)', icon: '🖥️', d: 'Damn Small Linux: real Linux desktop with mouse, browser, apps.',
+    tag: '52 MB', mem: 256, cdrom: file('dsl-4.11.rc2.iso', 52824064), autoEnter: true },
+  { id: 'tinycore', name: 'Linux Desktop (TinyCore)', icon: '🐧', d: 'Tiny Core Linux with a light desktop. Very small.',
+    tag: '20 MB', mem: 256, hda: file('TinyCore-11.0.iso', 19922944) },
+  { id: 'linux', name: 'Linux Terminal', icon: '⌨️', d: 'Buildroot Linux 6.8. Text terminal only, no desktop.',
+    tag: 'terminal only', mem: 256, bzimage: file('buildroot-bzimage68.bin', 10068480),
+    cmdline: 'tsc=reliable mitigations=off random.trust_cpu=on' },
+  { id: 'windows95', name: 'Windows 95', icon: '🪟', d: 'Full Windows 95 desktop. Win9x and DOS games.',
+    tag: 'streams disk', mem: 64, hda: part('windows95-v3/.img', 471859200, 256 * KB1) },
+  { id: 'windows98', name: 'Windows 98', icon: '🪟', d: 'Windows 98. Has an instant-start snapshot.',
+    tag: 'instant start', mem: 128, mac: true, hda: part('windows98/.img', 300 * MB, 256 * KB1),
+    state: { url: HOST + 'windows98_state-v2.bin.zst' } },
+  { id: 'windows2000', name: 'Windows 2000', icon: '🪟', d: 'Windows 2000. Has an instant-start snapshot.',
+    tag: 'instant start', mem: 512, mac: true, hda: part('windows2k-v2/.img', 2048 * MB, 256 * KB1),
+    state: { url: HOST + 'windows2k_state-v4.bin.zst' } },
+  { id: 'windows31', name: 'Windows 3.1', icon: '🪟', d: 'Windows 3.1 on DOS. Small and fast.',
+    tag: '34 MB', mem: 64, hda: file('win31.img', 34463744) },
+  { id: 'reactos', name: 'ReactOS', icon: '🧩', d: 'Open-source Windows clone. Runs some Windows apps.',
+    tag: 'instant start', mem: 512, mac: true, acpi: true, net: 'virtio', hda: part('reactos-v3/.img', 734003200, MB),
+    state: { url: HOST + 'reactos_state-v3.bin.zst' } },
+  { id: 'haiku', name: 'Haiku', icon: '🪶', d: 'BeOS-style desktop OS.',
+    tag: 'instant start', mem: 512, acpi: true, hda: part('haiku-v5/.img', 1342177280, MB),
+    state: { url: HOST + 'haiku_state-v5.bin.zst' } },
+  { id: 'mac', name: 'Mac OS Classic', icon: '🍎', d: 'System 1 to Mac OS 9 and OS X 10.4. Online only.',
+    tag: 'online', mac: true, macOnline: true },
+  { id: 'msdos', name: 'MS-DOS 6.22', icon: '💾', d: 'Real MS-DOS. Attach a game disk to play.',
+    tag: 'games', mem: 32, hda: part('msdos622/.img', 64 * MB, 256 * KB1) },
+  { id: 'freedos', name: 'FreeDOS', icon: '💾', d: 'FreeDOS floppy. Attach a game disk to play.',
+    tag: 'games', mem: 32, fda: file('freedos722.img', 737280) },
+  { id: 'kolibri', name: 'KolibriOS', icon: '🕊️', d: 'Tiny fast desktop OS with built-in apps and games.',
+    tag: 'tiny', mem: 64, fda: { url: 'https://builds.kolibrios.org/en_US/data/data/kolibri.img', size: 1474560 },
+    fdaFallback: file('kolibri.img', 1474560) },
+  { id: 'win1011', name: 'Windows 10 / 11', icon: '🪟', d: 'Why it cannot run here, and what really works on a phone.',
+    tag: 'not possible', info: true },
+  { id: 'win', name: 'Windows (your ISO)', icon: '💿', d: 'Install 98 / ME / 2000 / XP from your own ISO.',
+    tag: 'needs your ISO', mem: 512, custom: true, blank: true },
+  { id: 'custom', name: 'Any ISO / IMG', icon: '🛠️', d: 'Boot anything you pick: Debian, Alpine, BSD, your own OS...',
+    tag: 'your file', mem: 512, custom: true, blank: true }
+];
 
-    private World world;
-    private Player player;
+/* ---------- FAT disk builder: files -> lazy MBR disk (FAT16 up to ~2 GB, FAT32 above) ----------
+   The disk is a File made of pieces (metadata in memory, file data referenced as Blobs),
+   so big libraries are never copied into RAM. */
+async function buildFatDisk(entries, freeBytes, label, opts) {
+  opts = opts || {};
+  const SS = 512, SPT = 63, ROOTENT = 512, MB1 = 1048576;
+  const CYLS16 = SPT * 16;
+  const SMALL_T = 1024 * CYLS16;                       // 504 MiB: legacy CHS still valid
+  const MAX16_T = 4150000;                             // ~1.98 GiB: FAT16 cluster limit with 32 KB clusters
+  const MAX32_T = (16 * 1024 * MB1) / SS;              // 16 GiB cap
+  const zero1 = opts.zeroBlob || new Blob([new Uint8Array(MB1)]);
+  const zeros = n => {
+    const out = [], full = Math.floor(n / MB1);
+    for (let i = 0; i < full; i++) out.push(zero1);
+    if (n - full * MB1 > 0) out.push(new Uint8Array(n - full * MB1));
+    return out;
+  };
+  const BAD = /[\\\/:*?"<>|\u0000-\u001f]/g;
+  const clean = s => {
+    s = String(s).replace(BAD, '_').replace(/[. ]+$/, '');
+    if (s.length > 255) s = s.slice(0, 255);
+    return s || '_';
+  };
 
-    private int state = 0; // 0 = loading, 1 = playing
-    private float loadProgress;
-
-    private int movePointer = -1;
-    private int lookPointer = -1;
-
-    private final Vector2 moveStart = new Vector2();
-    private final Vector2 lookLast = new Vector2();
-
-    private float moveX;
-    private float moveZ;
-    private float lookTime;
-    private boolean lookMoved;
-
-    @Override
-    public void create() {
-        cam = new PerspectiveCamera(70, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        cam.near = 0.1f;
-        cam.far = 400f;
-
-        shapes = new ShapeRenderer();
-        batch = new SpriteBatch();
-        font = new BitmapFont();
-
-        shader = createShader();
-
-        world = new World(20261112L);
-        player = new Player(8.5f, 40f, 8.5f);
-
-        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+  /* 1. tree */
+  const mkDir = (name, mtime) => ({ name, isDir: true, dirs: new Map(), files: new Map(), mtime: mtime || Date.now() });
+  const root = mkDir('', Date.now());
+  let nfiles = 0, ndirs = 0, totalData = 0;
+  for (const e of entries) {
+    const parts = String(e.path).replace(/\\/g, '/').split('/').filter(p => p && p !== '.' && p !== '..').map(clean);
+    if (!parts.length) continue;
+    const fname = parts.pop();
+    let d = root;
+    for (const p of parts) {
+      let nd = d.dirs.get(p.toLowerCase());
+      if (!nd) { nd = mkDir(p, e.mtime); d.dirs.set(p.toLowerCase(), nd); ndirs++; }
+      d = nd;
     }
+    const key = fname.toLowerCase();
+    if (!d.files.has(key)) nfiles++; else totalData -= d.files.get(key).size;
+    d.files.set(key, { name: fname, isDir: false, size: e.size, blob: e.blob, data: e.data, mtime: e.mtime || Date.now() });
+    totalData += e.size;
+  }
 
-    private ShaderProgram createShader() {
-        String vertexShader = ""
-            + "attribute vec3 a_position;\n"
-            + "attribute vec3 a_normal;\n"
-            + "attribute vec4 a_color;\n"
-            + "uniform mat4 u_projView;\n"
-            + "varying vec4 v_color;\n"
-            + "varying vec3 v_normal;\n"
-            + "void main() {\n"
-            + "    v_color = a_color;\n"
-            + "    v_normal = a_normal;\n"
-            + "    gl_Position = u_projView * vec4(a_position, 1.0);\n"
-            + "}";
-
-        String fragmentShader = ""
-            + "precision mediump float;\n"
-            + "varying vec4 v_color;\n"
-            + "varying vec3 v_normal;\n"
-            + "void main() {\n"
-            + "    float light = clamp(dot(normalize(v_normal), normalize(vec3(0.4, 0.8, 0.3))), 0.35, 1.0);\n"
-            + "    gl_FragColor = vec4(v_color.rgb * light, v_color.a);\n"
-            + "}";
-
-        ShaderProgram s = new ShaderProgram(vertexShader, fragmentShader);
-
-        if (!s.isCompiled()) {
-            throw new RuntimeException("Shader error: " + s.getLog());
-        }
-
-        return s;
+  /* 2. 8.3 names + long names */
+  const OK83 = /^[A-Z0-9$%'\-_@~`!(){}^#&]+$/;
+  function shortFor(name, used) {
+    const dot = name.lastIndexOf('.');
+    let base = dot > 0 ? name.slice(0, dot) : name;
+    let ext = dot > 0 ? name.slice(dot + 1) : '';
+    let lossy = (name.indexOf('.') !== dot) || /\s/.test(name) || name.startsWith('.');
+    const fix = s => {
+      let out = '';
+      for (const ch of s.toUpperCase()) {
+        if (ch === ' ' || ch === '.') { lossy = true; continue; }
+        if (ch.length === 1 && OK83.test(ch)) out += ch; else { out += '_'; lossy = true; }
+      }
+      return out;
+    };
+    base = fix(base); ext = fix(ext);
+    if (!base) { base = '_'; lossy = true; }
+    if (base.length > 8) { base = base.slice(0, 8); lossy = true; }
+    if (ext.length > 3) { ext = ext.slice(0, 3); lossy = true; }
+    let short = base + (ext ? '.' + ext : '');
+    if (!lossy && !used.has(short)) { used.add(short); return { short, base, ext }; }
+    for (let n = 1; n < 1000000; n++) {
+      const tail = '~' + n;
+      const b = base.slice(0, Math.max(1, 8 - tail.length)) + tail;
+      short = b + (ext ? '.' + ext : '');
+      if (!used.has(short)) { used.add(short); return { short, base: b, ext }; }
     }
-
-    @Override
-    public void render() {
-        float dt = Gdx.graphics.getDeltaTime();
-
-        if (state == 0) {
-            updateLoading();
-            drawLoading();
-            return;
-        }
-
-        updateInput(dt);
-
-        boolean jump = moveZ > 0.9f;
-        player.update(dt, world, moveX, moveZ, jump);
-
-        cam.position.set(
-            player.x,
-            player.y + 1.6f,
-            player.z
-        );
-
-        updateCameraDirection();
-        cam.update();
-
-        world.ensureChunks(cam.position, VIEW_DISTANCE, 2);
-
-        Gdx.gl.glClearColor(0.55f, 0.75f, 1f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
-        shader.bind();
-        shader.setUniformMatrix("u_projView", cam.combined);
-
-        world.render(shader);
-
-        drawCrosshair();
+    throw new Error('Cannot make short name for ' + name);
+  }
+  const allDirs = [];
+  (function prep(d, isRoot) {
+    d.isRoot = isRoot;
+    const used = new Set();
+    d.kids = [...d.dirs.values(), ...d.files.values()];
+    let count = isRoot ? 1 : 2;
+    for (const k of d.kids) {
+      const s = shortFor(k.name, used);
+      k.s = s; k.lfn = k.name !== s.short;
+      count += 1 + (k.lfn ? Math.ceil(k.name.length / 13) : 0);
     }
+    d.entries = count;
+    allDirs.push(d);
+    for (const c of d.dirs.values()) prep(c, false);
+  })(root, true);
+  if (root.entries > ROOTENT && opts.force !== 'fat32') root.rootOverflow = true;
 
-    private void updateLoading() {
-        Vector3 spawn = new Vector3(8.5f, 0f, 8.5f);
+  /* 3. choose FAT type and size */
+  const roundUp = (n, m) => Math.ceil(n / m) * m;
+  const dirClusters = (d, cb) => Math.max(1, Math.ceil(d.entries * 32 / cb));
+  let fat32 = opts.force === 'fat32' || !!root.rootOverflow;
+  let T = Math.ceil((totalData + freeBytes + (nfiles + ndirs) * (fat32 ? 8192 : 16384) + 4 * MB1) / SS);
+  T = Math.max(T, fat32 ? 40 * MB1 / SS : 64 * MB1 / SS);
+  T = roundUp(T, CYLS16);
+  if (!fat32 && T > MAX16_T) fat32 = true;
+  if (fat32) T = Math.max(T, 40 * MB1 / SS);
+  let geo = null;
 
-        int remaining = world.ensureChunks(spawn, VIEW_DISTANCE, 2);
-        int total = (VIEW_DISTANCE * 2 + 1) * (VIEW_DISTANCE * 2 + 1);
-
-        loadProgress = 1f - (float) remaining / total;
-
-        if (remaining <= 0) {
-            int surface = world.surfaceY(8, 8);
-            player.setPosition(8.5f, surface + 2f, 8.5f);
-            state = 1;
-        }
+  for (let attempt = 0; attempt < 12 && !geo; attempt++) {
+    if (!fat32 && T > MAX16_T) fat32 = true;
+    if (T > MAX32_T) throw new Error('Too much data. The apps drive can hold about 16 GB.');
+    const P = T - 63;
+    let spc, fatsec, clusters;
+    if (!fat32) {
+      for (spc = 1; spc <= 64; spc *= 2) {
+        fatsec = 1;
+        for (let i = 0; i < 5; i++) { clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc); fatsec = Math.ceil((clusters + 2) * 2 / SS); }
+        clusters = Math.floor((P - 1 - 2 * fatsec - 32) / spc);
+        if (clusters <= 65000) break;
+      }
+      if (clusters > 65000) { fat32 = true; continue; }
+    } else {
+      const bytes = P * SS;
+      const tspc = bytes <= 8 * 1024 * MB1 ? 8 : bytes <= 16 * 1024 * MB1 ? 16 : 32;
+      for (spc = tspc; spc >= 1; spc >>= 1) {
+        fatsec = 1;
+        for (let i = 0; i < 6; i++) { clusters = Math.floor((P - 32 - 2 * fatsec) / spc); fatsec = Math.ceil((clusters + 2) * 4 / SS); }
+        clusters = Math.floor((P - 32 - 2 * fatsec) / spc);
+        if (clusters >= 66000) break;
+      }
+      if (clusters < 65600) throw new Error('Disk too small for FAT32');
     }
-
-    private void drawLoading() {
-        Gdx.gl.glClearColor(0.05f, 0.07f, 0.12f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        float barWidth = Gdx.graphics.getWidth() * 0.6f;
-        float barX = (Gdx.graphics.getWidth() - barWidth) / 2f;
-        float barY = Gdx.graphics.getHeight() * 0.55f;
-
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-
-        shapes.setColor(0.2f, 0.25f, 0.35f, 1f);
-        shapes.rect(barX, barY, barWidth, 18);
-
-        shapes.setColor(0.3f, 0.8f, 0.4f, 1f);
-        shapes.rect(barX, barY, barWidth * MathUtils.clamp(loadProgress, 0f, 1f), 18);
-
-        shapes.end();
-
-        batch.begin();
-        font.setColor(Color.WHITE);
-        font.draw(batch, "BLOCKLANDS", Gdx.graphics.getWidth() / 2f - 55f, Gdx.graphics.getHeight() * 0.72f);
-        font.draw(batch, "Generating world...", Gdx.graphics.getWidth() / 2f - 60f, barY - 30f);
-        batch.end();
+    const cb = spc * SS;
+    let need = fat32 ? dirClusters(root, cb) : 0;
+    for (const d of allDirs) {
+      if (!d.isRoot) need += dirClusters(d, cb);
+      for (const f of d.files.values()) need += Math.ceil(f.size / cb);
     }
+    if (!fat32 && root.entries > ROOTENT) { fat32 = true; continue; }
+    if (need <= clusters) { geo = { P, spc, fatsec, clusters, cb }; break; }
+    T = roundUp(Math.ceil(T * 1.2), CYLS16);
+  }
+  if (!geo) throw new Error('Could not size the disk');
+  const { P, spc, fatsec, clusters, cb } = geo;
 
-    private void updateInput(float dt) {
-        int maxPointers = Gdx.input.getMaxPointCount();
+  /* 4. allocate clusters (order == order on disk) */
+  const fat = fat32 ? new Uint32Array(clusters + 2) : new Uint16Array(clusters + 2);
+  const EOC = fat32 ? 0x0FFFFFFF : 0xFFFF;
+  fat[0] = fat32 ? 0x0FFFFFF8 : 0xFFF8; fat[1] = EOC;
+  let next = 2;
+  const order = [];
+  const alloc = n => {
+    if (n <= 0) return 0;
+    const s = next;
+    for (let i = 0; i < n; i++) fat[s + i] = (i === n - 1) ? EOC : s + i + 1;
+    next += n;
+    return s;
+  };
+  (function place(d) {
+    if (!d.isRoot || fat32) { d.start = alloc(dirClusters(d, cb)); d.ncl = dirClusters(d, cb); order.push(d); }
+    for (const f of d.files.values()) { f.start = alloc(Math.ceil(f.size / cb)); if (f.size) order.push(f); }
+    for (const c of d.dirs.values()) place(c);
+  })(root);
 
-        if (Gdx.input.justTouched()) {
-            for (int i = 0; i < maxPointers; i++) {
-                if (!Gdx.input.isTouched(i)) continue;
+  /* 5. header (everything before the data area) */
+  const dataRel = (fat32 ? 32 : 1 + 32) + 2 * fatsec;   // sectors from partition start to cluster 2 (FAT16: 1 + root 32)
+  const rsvd = fat32 ? 32 : 1;
+  const hdrBytes = (63 + (fat32 ? 32 + 2 * fatsec : 1 + 2 * fatsec + 32)) * SS;
+  const hdr = new Uint8Array(hdrBytes);
+  const hv = new DataView(hdr.buffer);
+  const small = T <= SMALL_T;
+  const HEADS = small ? 16 : 255;
 
-                if (movePointer == -1 && Gdx.input.getX(i) < Gdx.graphics.getWidth() / 2f) {
-                    movePointer = i;
-                    moveStart.set(Gdx.input.getX(i), Gdx.input.getY(i));
-                } else if (lookPointer == -1) {
-                    lookPointer = i;
-                    lookLast.set(Gdx.input.getX(i), Gdx.input.getY(i));
-                    lookTime = 0;
-                    lookMoved = false;
-                }
-            }
-        }
+  // MBR
+  const p = 446;
+  hdr[0] = 0xCD; hdr[1] = 0x18;                         // not bootable: INT 18h makes the BIOS try the next device
+  hdr[p + 1] = 1; hdr[p + 2] = 1; hdr[p + 3] = 0;
+  hdr[p + 4] = fat32 ? (small ? 0x0B : 0x0C) : (small ? 0x06 : 0x0E);
+  if (small) {
+    const endCyl = T / CYLS16 - 1;
+    hdr[p + 5] = 15; hdr[p + 6] = SPT | ((endCyl >> 8) & 3) << 6; hdr[p + 7] = endCyl & 255;
+  } else { hdr[p + 5] = 0xFE; hdr[p + 6] = 0xFF; hdr[p + 7] = 0xFF; }
+  hv.setUint32(p + 8, 63, true); hv.setUint32(p + 12, P, true);
+  hdr[510] = 0x55; hdr[511] = 0xAA;
 
-        for (int i = 0; i < maxPointers; i++) {
-            boolean touched = Gdx.input.isTouched(i);
+  // boot sector
+  const bs = 63 * SS;
+  hdr[bs] = 0xEB; hdr[bs + 1] = fat32 ? 0x58 : 0x3C; hdr[bs + 2] = 0x90;
+  [...'MSDOS5.0'].forEach((c, i) => hdr[bs + 3 + i] = c.charCodeAt(0));
+  hv.setUint16(bs + 11, SS, true); hdr[bs + 13] = spc; hv.setUint16(bs + 14, rsvd, true); hdr[bs + 16] = 2;
+  hv.setUint16(bs + 17, fat32 ? 0 : ROOTENT, true);
+  hv.setUint16(bs + 19, (!fat32 && P < 65536) ? P : 0, true);
+  hdr[bs + 21] = 0xF8;
+  hv.setUint16(bs + 22, fat32 ? 0 : fatsec, true);
+  hv.setUint16(bs + 24, SPT, true); hv.setUint16(bs + 26, HEADS, true);
+  hv.setUint32(bs + 28, 63, true);
+  hv.setUint32(bs + 32, (!fat32 && P < 65536) ? 0 : P, true);
+  const lab = (label || 'MYAPPS').toUpperCase().replace(/[^A-Z0-9_ ]/g, '_').slice(0, 11).padEnd(11, ' ');
+  const serial = (Date.now() & 0x7fffffff) >>> 0;
+  if (!fat32) {
+    hdr[bs + 36] = 0x80; hdr[bs + 38] = 0x29; hv.setUint32(bs + 39, serial, true);
+    [...lab].forEach((c, i) => hdr[bs + 43 + i] = c.charCodeAt(0));
+    [...'FAT16   '].forEach((c, i) => hdr[bs + 54 + i] = c.charCodeAt(0));
+    hdr[bs + 62] = 0xCD; hdr[bs + 63] = 0x18;
+  } else {
+    hv.setUint32(bs + 36, fatsec, true); hv.setUint32(bs + 44, 2, true);
+    hv.setUint16(bs + 48, 1, true); hv.setUint16(bs + 50, 6, true);
+    hdr[bs + 64] = 0x80; hdr[bs + 66] = 0x29; hv.setUint32(bs + 67, serial, true);
+    [...lab].forEach((c, i) => hdr[bs + 71 + i] = c.charCodeAt(0));
+    [...'FAT32   '].forEach((c, i) => hdr[bs + 82 + i] = c.charCodeAt(0));
+    hdr[bs + 90] = 0xCD; hdr[bs + 91] = 0x18;
+  }
+  hdr[bs + 510] = 0x55; hdr[bs + 511] = 0xAA;
+  if (fat32) {
+    const fi = bs + SS;                                   // FSInfo
+    hv.setUint32(fi, 0x41615252, true); hv.setUint32(fi + 484, 0x61417272, true);
+    hv.setUint32(fi + 488, 0xFFFFFFFF, true); hv.setUint32(fi + 492, 0xFFFFFFFF, true);
+    hdr[fi + 510] = 0x55; hdr[fi + 511] = 0xAA; hdr[fi + 508] = 0; hdr[fi + 509] = 0;
+    hdr.copyWithin(bs + 6 * SS, bs, bs + SS);             // backup boot sector
+    hdr.copyWithin(bs + 7 * SS, fi, fi + SS);             // backup FSInfo
+  }
 
-            if (!touched) {
-                if (i == movePointer) {
-                    movePointer = -1;
-                    moveX = 0;
-                    moveZ = 0;
-                }
+  // FATs
+  const fat0 = bs + rsvd * SS;
+  const fatBytes = new Uint8Array(fat.buffer, fat.byteOffset, fat.byteLength);
+  hdr.set(fatBytes, fat0);
+  hdr.set(fatBytes, fat0 + fatsec * SS);
+  const rootOff = bs + (rsvd + 2 * fatsec) * SS;           // FAT16 only
 
-                if (i == lookPointer) {
-                    if (!lookMoved) {
-                        if (lookTime < 0.25f) {
-                            breakBlock();
-                        } else if (lookTime < 0.9f) {
-                            placeBlock();
-                        }
-                    }
-
-                    lookPointer = -1;
-                    lookTime = 0;
-                    lookMoved = false;
-                }
-
-                continue;
-            }
-
-            float x = Gdx.input.getX(i);
-            float y = Gdx.input.getY(i);
-
-            if (i == movePointer) {
-                float dx = x - moveStart.x;
-                float dy = y - moveStart.y;
-
-                float length = (float) Math.sqrt(dx * dx + dy * dy);
-                float maxRadius = Gdx.graphics.getWidth() * 0.08f;
-
-                if (length > maxRadius) {
-                    dx = dx / length * maxRadius;
-                    dy = dy / length * maxRadius;
-                }
-
-                moveX = dx / maxRadius;
-                moveZ = -dy / maxRadius;
-
-            } else if (i == lookPointer) {
-                float dx = x - lookLast.x;
-                float dy = y - lookLast.y;
-
-                player.yaw -= dx * 0.3f;
-                player.pitch = MathUtils.clamp(player.pitch - dy * 0.3f, -1.4f, 1.4f);
-
-                lookLast.set(x, y);
-                lookTime += dt;
-
-                if (Math.abs(dx) + Math.abs(dy) > 3) {
-                    lookMoved = true;
-                }
-            }
-        }
+  /* 6. directory writers */
+  const dosDT = ms => {
+    const d = new Date(ms || Date.now());
+    let y = d.getFullYear(); if (y < 1980) y = 1980; if (y > 2107) y = 2107;
+    return { date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1) };
+  };
+  const put83 = (buf, dv, off, base, ext, attr, start, size, ms) => {
+    const n = base.padEnd(8, ' ') + ext.padEnd(3, ' ');
+    for (let i = 0; i < 11; i++) buf[off + i] = n.charCodeAt(i);
+    buf[off + 11] = attr;
+    const t = dosDT(ms);
+    dv.setUint16(off + 14, t.time, true); dv.setUint16(off + 16, t.date, true); dv.setUint16(off + 18, t.date, true);
+    dv.setUint16(off + 20, (start >>> 16) & 0xFFFF, true);
+    dv.setUint16(off + 22, t.time, true); dv.setUint16(off + 24, t.date, true);
+    dv.setUint16(off + 26, start & 0xFFFF, true); dv.setUint32(off + 28, size >>> 0, true);
+  };
+  const csum = (base, ext) => {
+    const n = base.padEnd(8, ' ') + ext.padEnd(3, ' ');
+    let s = 0;
+    for (let i = 0; i < 11; i++) s = ((((s & 1) ? 0x80 : 0) + (s >> 1) + n.charCodeAt(i)) & 0xFF);
+    return s;
+  };
+  const LPOS = [1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30];
+  function writeDir(d, parentStart, buf, dv, off) {
+    if (d.isRoot) { put83(buf, dv, off, lab.slice(0, 8).trimEnd(), lab.slice(8).trimEnd(), 0x08, 0, 0, Date.now()); off += 32; }
+    else {
+      put83(buf, dv, off, '.', '', 0x10, d.start, 0, d.mtime); off += 32;
+      put83(buf, dv, off, '..', '', 0x10, parentStart, 0, d.mtime); off += 32;
     }
-
-    private void updateCameraDirection() {
-        double yaw = Math.toRadians(player.yaw);
-        double pitch = Math.toRadians(player.pitch);
-
-        cam.direction.set(
-            (float) (Math.cos(pitch) * Math.sin(yaw)),
-            (float) Math.sin(pitch),
-            (float) (-Math.cos(pitch) * Math.cos(yaw))
-        ).nor();
-
-        cam.up.set(0, 1, 0);
+    for (const k of d.kids) {
+      if (k.lfn) {
+        const u = []; for (let i = 0; i < k.name.length; i++) u.push(k.name.charCodeAt(i));
+        const n = Math.ceil(u.length / 13), cs = csum(k.s.base, k.s.ext);
+        for (let o = n; o >= 1; o--) {
+          buf[off] = o | (o === n ? 0x40 : 0);
+          for (let j = 0; j < 13; j++) {
+            const idx = (o - 1) * 13 + j;
+            dv.setUint16(off + LPOS[j], idx < u.length ? u[idx] : (idx === u.length ? 0 : 0xFFFF), true);
+          }
+          buf[off + 11] = 0x0F; buf[off + 12] = 0; buf[off + 13] = cs;
+          off += 32;
+        }
+      }
+      if (k.isDir) put83(buf, dv, off, k.s.base, k.s.ext, 0x10, k.start, 0, k.mtime);
+      else put83(buf, dv, off, k.s.base, k.s.ext, 0x20, k.start || 0, k.size, k.mtime);
+      off += 32;
     }
+  }
+  const parentOf = new Map();
+  (function link(d) { for (const c of d.dirs.values()) { parentOf.set(c, d); link(c); } })(root);
+  if (!fat32) writeDir(root, 0, hdr, hv, rootOff);
 
-    private void breakBlock() {
-        Vector3[] hit = raycast();
-
-        if (hit == null) return;
-
-        Vector3 block = hit[0];
-
-        world.setBlock(
-            (int) block.x,
-            (int) block.y,
-            (int) block.z,
-            (byte) 0
-        );
+  /* 7. assemble the disk from pieces */
+  const parts = [hdr];
+  let pos = hdr.length;
+  for (const o of order) {
+    if (o.isDir) {
+      const buf = new Uint8Array(o.ncl * cb), dv = new DataView(buf.buffer);
+      const par = parentOf.get(o);
+      writeDir(o, !par || par.isRoot ? 0 : par.start, buf, dv, 0);
+      parts.push(buf); pos += buf.length;
+    } else {
+      const src = o.blob || o.data;
+      if (!src) throw new Error('No data for ' + o.name);
+      if ((src.size !== undefined ? src.size : src.length) !== o.size) throw new Error('File changed while reading: ' + o.name);
+      parts.push(src); pos += o.size;
+      const pad = Math.ceil(o.size / cb) * cb - o.size;
+      if (pad) { parts.push(new Uint8Array(pad)); pos += pad; }
     }
-
-    private void placeBlock() {
-        Vector3[] hit = raycast();
-
-        if (hit == null || hit[1] == null) return;
-
-        Vector3 previous = hit[1];
-
-        int bx = (int) previous.x;
-        int by = (int) previous.y;
-        int bz = (int) previous.z;
-
-        if (World.isSolid(world.getBlock(bx, by, bz))) return;
-
-        float px = player.x;
-        float py = player.y;
-        float pz = player.z;
-
-        boolean insidePlayer =
-            Math.abs(bx + 0.5f - px) < 0.8f &&
-            Math.abs(bz + 0.5f - pz) < 0.8f &&
-            by >= MathUtils.floor(py) &&
-            by <= MathUtils.floor(py + 1.8f);
-
-        if (insidePlayer) return;
-
-        world.setBlock(bx, by, bz, (byte) 3); // stone
-    }
-
-    private Vector3[] raycast() {
-        Vector3 position = cam.position.cpy();
-        Vector3 direction = cam.direction.cpy().nor();
-        Vector3 previous = null;
-
-        for (float t = 0; t < 6f; t += 0.05f) {
-            position.add(
-                direction.x * 0.05f,
-                direction.y * 0.05f,
-                direction.z * 0.05f
-            );
-
-            int bx = MathUtils.floor(position.x);
-            int by = MathUtils.floor(position.y);
-            int bz = MathUtils.floor(position.z);
-
-            byte block = world.getBlock(bx, by, bz);
-
-            if (World.isSolid(block)) {
-                return new Vector3[] {
-                    new Vector3(bx, by, bz),
-                    previous
-                };
-            }
-
-            previous = new Vector3(bx, by, bz);
-        }
-
-        return null;
-    }
-
-    private void drawCrosshair() {
-        shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(1, 1, 1, 0.8f);
-
-        float cx = Gdx.graphics.getWidth() / 2f;
-        float cy = Gdx.graphics.getHeight() / 2f;
-
-        shapes.line(cx - 10, cy, cx + 10, cy);
-        shapes.line(cx, cy - 10, cx, cy + 10);
-
-        shapes.end();
-    }
-
-    @Override
-    public void dispose() {
-        shapes.dispose();
-        batch.dispose();
-        font.dispose();
-        shader.dispose();
-        world.dispose();
-    }
-
-    public static class World implements Disposable {
-
-        public static final int SEA_LEVEL = 14;
-
-        public final long seed;
-        private final java.util.HashMap<Long, Chunk> chunks = new java.util.HashMap<>();
-
-        public World(long seed) {
-            this.seed = seed;
-        }
-
-        private static long chunkKey(int cx, int cz) {
-            return ((long) cx << 32) ^ (cz & 0xffffffffL);
-        }
-
-        public byte getBlock(int x, int y, int z) {
-            if (y < 0 || y >= Chunk.HEIGHT) return 0;
-
-            int cx = Math.floorDiv(x, Chunk.SIZE);
-            int cz = Math.floorDiv(z, Chunk.SIZE);
-
-            Chunk chunk = chunks.get(chunkKey(cx, cz));
-            if (chunk == null) return 0;
-
-            return chunk.getLocal(
-                Math.floorMod(x, Chunk.SIZE),
-                y,
-                Math.floorMod(z, Chunk.SIZE)
-            );
-        }
-
-        public void setBlock(int x, int y, int z, byte id) {
-            if (y < 0 || y >= Chunk.HEIGHT) return;
-
-            int cx = Math.floorDiv(x, Chunk.SIZE);
-            int cz = Math.floorDiv(z, Chunk.SIZE);
-
-            Chunk chunk = chunks.get(chunkKey(cx, cz));
-            if (chunk == null) return;
-
-            chunk.setLocal(
-                Math.floorMod(x, Chunk.SIZE),
-                y,
-                Math.floorMod(z, Chunk.SIZE),
-                id
-            );
-        }
-
-        public int surfaceY(int x, int z) {
-            for (int y = Chunk.HEIGHT - 1; y >= 0; y--) {
-                if (getBlock(x, y, z) != 0) return y;
-            }
-
-            return 0;
-        }
-
-        public int ensureChunks(Vector3 center, int radius, int budget) {
-            int playerChunkX = MathUtils.floor(center.x / Chunk.SIZE);
-            int playerChunkZ = MathUtils.floor(center.z / Chunk.SIZE);
-
-            int missing = 0;
-
-            for (int dz = -radius; dz <= radius; dz++) {
-                for (int dx = -radius; dx <= radius; dx++) {
-                    if (!chunks.containsKey(chunkKey(playerChunkX + dx, playerChunkZ + dz))) {
-                        missing++;
-                    }
-                }
-            }
-
-            int generated = 0;
-
-            for (int dz = -radius; dz <= radius && generated < budget; dz++) {
-                for (int dx = -radius; dx <= radius && generated < budget; dx++) {
-                    int cx = playerChunkX + dx;
-                    int cz = playerChunkZ + dz;
-
-                    if (chunks.containsKey(chunkKey(cx, cz))) continue;
-
-                    Chunk chunk = new Chunk(this, cx, cz);
-                    chunk.generate();
-
-                    chunks.put(chunkKey(cx, cz), chunk);
-                    generated++;
-                }
-            }
-
-            return missing - generated;
-        }
-
-        public void render(ShaderProgram shader) {
-            for (Chunk chunk : chunks.values()) {
-                if (chunk.isDirty()) {
-                    chunk.buildMesh();
-                }
-
-                chunk.render(shader);
-            }
-        }
-
-        @Override
-        public void dispose() {
-            for (Chunk chunk : chunks.values()) {
-                chunk.dispose();
-            }
-
-            chunks.clear();
-        }
-
-        public static boolean isSolid(byte id) {
-            return id != 0 && id != 7; // water is non-solid in this prototype
-        }
-
-        static float hash(int x, int y, int z, long seed) {
-            long h = seed;
-
-            h ^= (long) x * 374761393L;
-            h ^= (long) y * 668265263L;
-            h ^= (long) z * 2147483647L;
-
-            h ^= h >> 13;
-            h *= 1274126177L;
-            h ^= h >> 16;
-
-            return (h & 0xFFFFFF) / (float) 0xFFFFFF;
-        }
-
-        static float hash2(int x, int z, long seed) {
-            return hash(x, 0, z, seed);
-        }
-
-        public int terrainHeight(int x, int z) {
-            float hills = (float) (Math.sin(x * 0.07) * 3.0 + Math.cos(z * 0.06) * 3.0);
-            float largeHills = (float) (Math.sin((x + z) * 0.035) * 4.0);
-            float roughness = (hash2(x >> 3, z >> 3, seed) - 0.5f) * 3f;
-
-            return MathUtils.clamp(
-                (int) (18 + hills + largeHills + roughness),
-                4,
-                Chunk.HEIGHT - 10
-            );
-        }
-    }
-
-    public static class Chunk implements Disposable {
-
-        public static final int SIZE = 16;
-        public static final int HEIGHT = 48;
-
-        public final int cx;
-        public final int cz;
-
-        private final byte[] blocks;
-        private Mesh mesh;
-        private boolean dirty = true;
-
-        private final World world;
-
-        public Chunk(World world, int cx, int cz) {
-            this.world = world;
-            this.cx = cx;
-            this.cz = cz;
-
-            blocks = new byte[SIZE * SIZE * HEIGHT];
-        }
-
-        public byte getLocal(int x, int y, int z) {
-            if (x < 0 || x >= SIZE || y < 0 || y >= HEIGHT || z < 0 || z >= SIZE) {
-                return 0;
-            }
-
-            return blocks[(y * SIZE + z) * SIZE + x];
-        }
-
-        public void setLocal(int x, int y, int z, byte id) {
-            if (x < 0 || x >= SIZE || y < 0 || y >= HEIGHT || z < 0 || z >= SIZE) {
-                return;
-            }
-
-            blocks[(y * SIZE + z) * SIZE + x] = id;
-            dirty = true;
-        }
-
-        public boolean isDirty() {
-            return dirty;
-        }
-
-        public void generate() {
-            int startX = cx * SIZE;
-            int startZ = cz * SIZE;
-
-            for (int z = 0; z < SIZE; z++) {
-                for (int x = 0; x < SIZE; x++) {
-                    int worldX = startX + x;
-                    int worldZ = startZ + z;
-
-                    int height = world.terrainHeight(worldX, worldZ);
-
-                    for (int y = 0; y <= height; y++) {
-                        byte id;
-
-                        if (y == height) {
-                            id = 1; // grass
-                        } else if (y > height - 4) {
-                            id = 2; // dirt
-                        } else {
-                            id = 3; // stone
-                        }
-
-                        if (y > 2 && y < height - 1) {
-                            float cave = World.hash(
-                                worldX >> 2,
-                                y >> 2,
-                                worldZ >> 2,
-                                world.seed
-                            );
-
-                            if (cave > 0.78f) {
-                                id = 0;
-                            }
-                        }
-
-                        if (id == 3) {
-                            float oreChance = World.hash(worldX, y, worldZ, world.seed + 7);
-
-                            if (oreChance < 0.006f && y < 20) {
-                                id = 8; // coal
-                            } else if (oreChance < 0.010f && y < 14) {
-                                id = 9; // iron
-                            } else if (oreChance < 0.012f && y < 8) {
-                                id = 10; // gold
-                            } else if (oreChance < 0.013f && y < 5) {
-                                id = 11; // diamond
-                            }
-                        }
-
-                        setLocal(x, y, z, id);
-                    }
-
-                    if (height < World.SEA_LEVEL) {
-                        for (int y = height + 1; y <= World.SEA_LEVEL; y++) {
-                            setLocal(x, y, z, (byte) 7);
-                        }
-                    }
-                }
-            }
-
-            for (int z = 2; z < SIZE - 2; z++) {
-                for (int x = 2; x < SIZE - 2; x++) {
-                    int worldX = startX + x;
-                    int worldZ = startZ + z;
-
-                    int height = world.terrainHeight(worldX, worldZ);
-
-                    if (height <= World.SEA_LEVEL) continue;
-                    if (getLocal(x, height, z) != 1) continue;
-
-                    float treeChance = World.hash2(worldX, worldZ, world.seed + 31);
-
-                    if (treeChance > 0.03f) continue;
-
-                    int trunkHeight = 4 + (int) (World.hash2(worldX, worldZ, world.seed + 41) * 2f);
-
-                    for (int i = 1; i <= trunkHeight; i++) {
-                        setLocal(x, height + i, z, (byte) 5);
-                    }
-
-                    for (int dy = trunkHeight - 1; dy <= trunkHeight + 1; dy++) {
-                        int leafRadius = dy == trunkHeight + 1 ? 1 : 2;
-
-                        for (int dz = -leafRadius; dz <= leafRadius; dz++) {
-                            for (int dx = -leafRadius; dx <= leafRadius; dx++) {
-                                if (dx == 0 && dz == 0 && dy <= trunkHeight) continue;
-
-                                int leafX = x + dx;
-                                int leafZ = z + dz;
-                                int leafY = height + dy;
-
-                                if (leafX < 0 || leafX >= SIZE) continue;
-                                if (leafZ < 0 || leafZ >= SIZE) continue;
-                                if (leafY >= HEIGHT) continue;
-
-                                if (getLocal(leafX, leafY, leafZ) == 0) {
-                                    setLocal(leafX, leafY, leafZ, (byte) 6);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            dirty = true;
-        }
-
-        public void buildMesh() {
-            if (mesh != null) {
-                mesh.dispose();
-                mesh = null;
-            }
-
-            FloatArray vertices = new FloatArray();
-
-            for (int y = 0; y < HEIGHT; y++) {
-                for (int z = 0; z < SIZE; z++) {
-                    for (int x = 0; x < SIZE; x++) {
-                        byte id = blocks[(y * SIZE + z) * SIZE + x];
-
-                        if (id == 0) continue;
-
-                        addFaces(vertices, x, y, z, id);
-                    }
-                }
-            }
-
-            if (vertices.size > 0) {
-                mesh = new Mesh(
-                    true,
-                    vertices.size / 10,
-                    0,
-                    new VertexAttribute(Usage.Position, 3, "a_position"),
-                    new VertexAttribute(Usage.Normal, 3, "a_normal"),
-                    new VertexAttribute(Usage.ColorUnpacked, 4, "a_color")
-                );
-
-                mesh.setVertices(vertices.items, 0, vertices.size);
-            }
-
-            dirty = false;
-        }
-
-        private void addFaces(FloatArray vertices, int x, int y, int z, byte id) {
-            int worldX = cx * SIZE + x;
-            int worldZ = cz * SIZE + z;
-
-            int[][] directions = {
-                {1, 0, 0},
-                {-1, 0, 0},
-                {0, 1, 0},
-                {0, -1, 0},
-                {0, 0, 1},
-                {0, 0, -1}
-            };
-
-            for (int[] direction : directions) {
-                byte neighbor = world.getBlock(
-                    worldX + direction[0],
-                    y + direction[1],
-                    worldZ + direction[2]
-                );
-
-                boolean visible;
-
-                if (id == 7) {
-                    visible = neighbor == 0;
-                } else {
-                    visible = neighbor == 0 || neighbor == 7;
-                }
-
-                if (!visible) continue;
-
-                float[] corners = faceCorners(direction);
-                float[] normal = {
-                    direction[0],
-                    direction[1],
-                    direction[2]
-                };
-
-                float[] color = colorFor(id);
-
-                int[] triangleOrder = {0, 1, 2, 0, 2, 3};
-
-                for (int index : triangleOrder) {
-                    float[] corner = corners[index];
-
-                    vertices.add(worldX + corner[0]);
-                    vertices.add(y + corner[1]);
-                    vertices.add(worldZ + corner[2]);
-
-                    vertices.add(normal[0]);
-                    vertices.add(normal[1]);
-                    vertices.add(normal[2]);
-
-                    vertices.add(color[0]);
-                    vertices.add(color[1]);
-                    vertices.add(color[2]);
-                    vertices.add(color[3]);
-                }
-            }
-        }
-
-        private float[] faceCorners(int[] direction) {
-            if (direction[0] == 1) {
-                return new float[] {1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1};
-            }
-
-            if (direction[0] == -1) {
-                return new float[] {0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0};
-            }
-
-            if (direction[1] == 1) {
-                return new float[] {0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0};
-            }
-
-            if (direction[1] == -1) {
-                return new float[] {0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1};
-            }
-
-            if (direction[2] == 1) {
-                return new float[] {0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1};
-            }
-
-            return new float[] {0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0};
-        }
-
-        private float[] colorFor(byte id) {
-            switch (id) {
-                case 1: return new float[] {0.36f, 0.65f, 0.28f, 1f};
-                case 2: return new float[] {0.48f, 0.32f, 0.20f, 1f};
-                case 3: return new float[] {0.55f, 0.55f, 0.55f, 1f};
-                case 4: return new float[] {0.90f, 0.85f, 0.60f, 1f};
-                case 5: return new float[] {0.45f, 0.30f, 0.16f, 1f};
-                case 6: return new float[] {0.20f, 0.50f, 0.20f, 1f};
-                case 7: return new float[] {0.20f, 0.45f, 0.90f, 1f};
-                case 8: return new float[] {0.15f, 0.15f, 0.15f, 1f};
-                case 9: return new float[] {0.75f, 0.60f, 0.45f, 1f};
-                case 10: return new float[] {0.90f, 0.75f, 0.20f, 1f};
-                case 11: return new float[] {0.40f, 0.90f, 0.90f, 1f};
-                default: return new float[] {1f, 0f, 1f, 1f};
-            }
-        }
-
-        public void render(ShaderProgram shader) {
-            if (mesh == null) return;
-
-            mesh.render(shader, GL20.GL_TRIANGLES);
-        }
-
-        @Override
-        public void dispose() {
-            if (mesh != null) {
-                mesh.dispose();
-                mesh = null;
-            }
-        }
-    }
-
-    public static class Player {
-
-        public float x;
-        public float y;
-        public float z;
-
-        public float yaw;
-        public float pitch;
-
-        public boolean onGround;
-
-        private float velocityX;
-        private float velocityY;
-        private float velocityZ;
-
-        public Player(float x, float y, float z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public void setPosition(float x, float y, float z) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public void update(float dt, World world, float moveX, float moveZ, boolean jump) {
-            double yawRadians = Math.toRadians(yaw);
-
-            float forwardX = (float) Math.sin(yawRadians);
-            float forwardZ = (float) -Math.cos(yawRadians);
-
-            float rightX = (float) Math.cos(yawRadians);
-            float rightZ = (float) Math.sin(yawRadians);
-
-            float moveWorldX = forwardX * moveZ + rightX * moveX;
-            float moveWorldZ = forwardZ * moveZ + rightZ * moveX;
-
-            float length = (float) Math.sqrt(
-                moveWorldX * moveWorldX + moveWorldZ * moveWorldZ
-            );
-
-            if (length > 1f) {
-                moveWorldX /= length;
-                moveWorldZ /= length;
-            }
-
-            float speed = 4.5f;
-
-            velocityX = moveWorldX * speed;
-            velocityZ = moveWorldZ * speed;
-            velocityY -= 25f * dt;
-
-            if (jump && onGround) {
-                velocityY = 8.5f;
-                onGround = false;
-            }
-
-            moveAxis(world, velocityX * dt, 0, 0);
-            moveAxis(world, 0, velocityY * dt, 0);
-            moveAxis(world, 0, 0, velocityZ * dt);
-        }
-
-        private void moveAxis(World world, float dx, float dy, float dz) {
-            float radius = 0.3f;
-            float height = 1.8f;
-
-            float newX = x + dx;
-            float newY = y + dy;
-            float newZ = z + dz;
-
-            if (!collides(world, newX, newY, newZ, radius, height)) {
-                x = newX;
-                y = newY;
-                z = newZ;
-
-                if (dy < 0) {
-                    onGround = false;
-                }
-
-                return;
-            }
-
-            if (dy < 0) {
-                onGround = true;
-                velocityY = 0;
-                y = MathUtils.floor(newY) + 1;
-            } else if (dy > 0) {
-                velocityY = 0;
-            }
-        }
-
-        private boolean collides(World world, float x, float y, float z, float radius, float height) {
-            int minX = MathUtils.floor(x - radius);
-            int maxX = MathUtils.floor(x + radius);
-
-            int minY = MathUtils.floor(y);
-            int maxY = MathUtils.floor(y + height);
-
-            int minZ = MathUtils.floor(z - radius);
-            int maxZ = MathUtils.floor(z + radius);
-
-            for (int blockX = minX; blockX <= maxX; blockX++) {
-                for (int blockY = minY; blockY <= maxY; blockY++) {
-                    for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
-                        if (World.isSolid(world.getBlock(blockX, blockY, blockZ))) {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-    }
+  }
+  const total = T * SS;
+  if (pos > total) throw new Error('Disk layout overflow');
+  for (const z of zeros(total - pos)) parts.push(z);
+  const file = new File(parts, 'apps.img');
+  return { file, parts, size: total, fatType: fat32 ? 32 : 16, usedClusters: next - 2, totalClusters: clusters, clusterBytes: cb };
 }
-</script>
-</body></html>
+
+/* ---------- state ---------- */
+let emu = null;
+let cur = null;
+let paused = false;
+let E = null;
+let wake = null;
+let heldLeft = false;
+let instant = false;
+let imm = false;
+let stretch = false;
+let fsApi = false;
+let lastKey = '';
+const pressed = new Set();
+let kbEls = new Map();
+let msEls = { l: [], m: [], r: [] };
+const mprev = { l: false, m: false, r: false };
+const mclicks = { l: [], r: [] };
+
+const files = {
+  boot: null,
+  game: null
+};
+
+/* ---------- IndexedDB ---------- */
+const idb = () => new Promise((res, rej) => {
+  const r = indexedDB.open('pclauncher', 3);
+
+  r.onupgradeneeded = () => {
+    const db = r.result;
+    if (!db.objectStoreNames.contains('s')) db.createObjectStore('s');
+    if (!db.objectStoreNames.contains('apps')) db.createObjectStore('apps');
+    if (!db.objectStoreNames.contains('discs')) db.createObjectStore('discs');
+  };
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+
+const idbGet = async k => {
+  const d = await idb();
+
+  return new Promise((res, rej) => {
+    const q = d.transaction('s').objectStore('s').get(k);
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+};
+
+const idbPut = async (k, v) => {
+  const d = await idb();
+
+  return new Promise((res, rej) => {
+    const t = d.transaction('s', 'readwrite');
+    t.objectStore('s').put(v, k);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+const hasState = async k => {
+  try {
+    return !!(await idbGet(k));
+  } catch (e) {
+    return false;
+  }
+};
+
+/* ---------- My Apps library (kept on the phone, shown as a drive in the PC) ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
+const appsAll = async () => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const q = d.transaction('apps').objectStore('apps').getAll();
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => rej(q.error);
+  });
+};
+
+const appsPutMany = async recs => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('apps', 'readwrite');
+    const st = t.objectStore('apps');
+    recs.forEach(r => st.put(r, r.path));
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('Not enough storage'));
+  });
+};
+
+const appsDelGroup = async g => {
+  const all = await appsAll();
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('apps', 'readwrite');
+    const st = t.objectStore('apps');
+    all.forEach(r => { if (r.group === g) st.delete(r.path); });
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+
+/* ---------- disc library (ISOs / disk images, kept on the phone) ---------- */
+const discsAll = async () => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const q = d.transaction('discs').objectStore('discs').getAll();
+    q.onsuccess = () => res((q.result || []).sort((a, b) => a.name.localeCompare(b.name)));
+    q.onerror = () => rej(q.error);
+  });
+};
+
+const discPut = async rec => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('discs', 'readwrite');
+    t.objectStore('discs').put(rec, rec.name);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('Not enough storage'));
+  });
+};
+
+const discDel = async name => {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction('discs', 'readwrite');
+    t.objectStore('discs').delete(name);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+/* a stored disc as a real File (v86 only takes File for lazy reads) */
+const discFile = async name => {
+  const d = await idb();
+  const rec = await new Promise((res, rej) => {
+    const q = d.transaction('discs').objectStore('discs').get(name);
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+  if (!rec) return null;
+  return new File([rec.blob], rec.name, { lastModified: rec.blob.lastModified || Date.now() });
+};
+
+/* which app groups are switched off (not put on the PC's drive) */
+const libOff = () => {
+  try { return new Set(JSON.parse(localStorage.getItem('pcl_off') || '[]')); } catch (e) { return new Set(); }
+};
+const libOffSave = s => { try { localStorage.setItem('pcl_off', JSON.stringify([...s])); } catch (e) {} };
+
+const DISC_EXT = /\.(iso|img|ima|vfd|flp|bin|hdd|vhd)$/i;
+const discKind = f => {
+  const n = f.name.toLowerCase();
+  if (n.endsWith('.iso')) return 'cdrom';
+  if (f.size <= 3000000 || /\.(vfd|flp|ima)$/.test(n)) return 'fd';
+  return 'hd';
+};
+const KIND_LABEL = { cdrom: 'CD', fd: 'Floppy', hd: 'Hard disk' };
+
+async function storageInfo() {
+  const o = { used: 0, quota: 0, persisted: false };
+  try {
+    const e = await navigator.storage.estimate();
+    o.used = e.usage || 0; o.quota = e.quota || 0;
+    o.persisted = await navigator.storage.persisted();
+  } catch (e) {}
+  return o;
+}
+
+/* ---------- read-ahead cache: big drives stop stalling the PC ----------
+   v86 reads a big File one tiny request at a time, each one a slow round trip to the
+   phone's storage. This keeps recent 1 MB chunks in RAM and pre-reads what comes next. */
+const FAST_STATS = { hits: 0, misses: 0, bytes: 0 };
+
+function fastFile(file) {
+  if (file.__fast) return file;
+
+  const U = 65536, MAXU = 1536;          /* 64 KB units, about 96 MB of cache */
+  const cache = new Map();              /* unit index -> Uint8Array */
+  const inflight = new Map();           /* unit index -> promise */
+  const size = file.size;
+  const nUnits = Math.ceil(size / U);
+  let lastEnd = -1, run = 0;
+
+  const f = new File([file], file.name || 'disk.img', { lastModified: file.lastModified || 0 });
+  const realSlice = Blob.prototype.slice;
+
+  /* read units [i, i+count) from storage in ONE request and file them in the cache */
+  const fetchUnits = (i, count) => {
+    count = Math.min(count, nUnits - i);
+    const p = realSlice.call(f, i * U, Math.min(size, (i + count) * U)).arrayBuffer().then(buf => {
+      for (let k = 0; k < count; k++) {
+        inflight.delete(i + k);
+        const len = Math.min(U, buf.byteLength - k * U);
+        if (len > 0) cache.set(i + k, new Uint8Array(buf, k * U, len));
+      }
+      while (cache.size > MAXU) cache.delete(cache.keys().next().value);
+    }, e => { for (let k = 0; k < count; k++) inflight.delete(i + k); throw e; });
+    for (let k = 0; k < count; k++) inflight.set(i + k, p);
+    return p;
+  };
+
+  const read = async (a, b) => {
+    const end = Math.min(size, a + b);
+    const i0 = Math.floor(a / U), i1 = Math.floor((end - 1) / U);
+
+    run = (a === lastEnd) ? run + 1 : 0;
+    lastEnd = end;
+
+    /* fetch what is missing in one go; when reads are sequential, grab 1 MB beyond it too */
+    const need = [];
+    for (let i = i0; i <= i1; i++) if (!cache.has(i)) need.push(i);
+    FAST_STATS[need.length ? 'misses' : 'hits']++;
+    FAST_STATS.bytes += b;
+
+    const waits = [];
+    if (need.length) {
+      const first = need[0], last = need[need.length - 1];
+      const extra = run >= 2 ? 16 : 0;
+      waits.push(fetchUnits(first, last - first + 1 + extra));
+    } else if (run >= 2) {
+      /* all cached, keep the pipeline full */
+      const nxt = i1 + 1;
+      let have = 0;
+      while (have < 16 && cache.has(nxt + have)) have++;
+      if (have < 8 && nxt + have < nUnits && !inflight.has(nxt + have)) fetchUnits(nxt + have, 16).catch(() => {});
+    }
+    for (let i = i0; i <= i1; i++) if (inflight.has(i)) waits.push(inflight.get(i));
+    if (waits.length) await Promise.all(waits);
+
+    const out = new Uint8Array(end - a);
+    let o = 0;
+    for (let i = i0; i <= i1; i++) {
+      let u = cache.get(i);
+      if (!u) {                           /* evicted mid-read (tiny cache pressure): read directly */
+        const buf = await realSlice.call(f, i * U, Math.min(size, (i + 1) * U)).arrayBuffer();
+        u = new Uint8Array(buf);
+      }
+      const s = i === i0 ? a - i0 * U : 0;
+      const e = i === i1 ? end - i1 * U : u.length;
+      out.set(u.subarray(s, e), o);
+      o += e - s;
+    }
+    return out.buffer;
+  };
+
+  f.slice = function (a, b, t) {
+    a = a == null ? 0 : a < 0 ? Math.max(0, size + a) : Math.min(a, size);
+    b = b == null ? size : b < 0 ? Math.max(0, size + b) : Math.min(b, size);
+    const bl = realSlice.call(f, a, b, t);
+    if (b > a) bl.__fast = () => read(a, b - a);
+    return bl;
+  };
+
+  f.__fast = true;
+  return f;
+}
+
+/* FileReader hook: slices made by fastFile() are answered from the cache */
+(() => {
+  const orig = FileReader.prototype.readAsArrayBuffer;
+  FileReader.prototype.readAsArrayBuffer = function (bl) {
+    if (bl && bl.__fast) {
+      const self = this;
+      bl.__fast().then(buf => {
+        Object.defineProperty(self, 'result', { value: buf, configurable: true });
+        Object.defineProperty(self, 'readyState', { value: 2, configurable: true });
+        if (self.onload) self.onload({ target: self });
+        if (self.onloadend) self.onloadend({ target: self });
+      }, err => {
+        if (self.onerror) self.onerror({ target: self, error: err });
+      });
+      return;
+    }
+    return orig.call(this, bl);
+  };
+})();
+
+let FF = null;
+function loadFflate() {
+  return FF || (FF = new Promise((res, rej) => {
+    if (window.fflate) return res(window.fflate);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js';
+    s.onload = () => window.fflate ? res(window.fflate) : rej(new Error('Zip library failed to start'));
+    s.onerror = () => { FF = null; rej(new Error('Could not load the zip library (needs internet)')); };
+    document.head.appendChild(s);
+  }));
+}
+
+/* streaming unzip: memory stays small even for multi-GB zips */
+function unzipStream(f, ff, onp) {
+  return new Promise((resolve, reject) => {
+    const out = [];
+    const pending = [];
+    const uz = new ff.Unzip();
+    uz.register(ff.UnzipInflate);
+    if (ff.UnzipPassThrough) uz.register(ff.UnzipPassThrough);
+
+    uz.onfile = file => {
+      if (file.name.endsWith('/')) return;
+      let blob = new Blob([]), chunks = [], held = 0, size = 0;
+
+      pending.push(new Promise((res, rej) => {
+        file.ondata = (err, chunk, final) => {
+          if (err) return rej(err);
+          chunks.push(chunk.slice());
+          held += chunk.length;
+          size += chunk.length;
+          if (held > 32 * 1048576 || final) { blob = new Blob([blob, ...chunks]); chunks = []; held = 0; }
+          if (final) { out.push({ name: file.name, blob, size }); res(); }
+        };
+        file.start();
+      }));
+    };
+
+    (async () => {
+      try {
+        const CH = 8 * 1048576;
+        for (let off = 0; off < f.size; off += CH) {
+          const buf = new Uint8Array(await f.slice(off, off + CH).arrayBuffer());
+          uz.push(buf, off + CH >= f.size);
+          if (onp) onp(Math.min(1, (off + CH) / f.size));
+          await new Promise(r => setTimeout(r, 0));
+        }
+        await Promise.all(pending);
+        resolve(out);
+      } catch (e) { reject(e); }
+    })();
+  });
+}
+
+async function importFiles(list, onp) {
+  let napps = 0, ndisc = 0;
+  const total = list.length;
+
+  for (let idx = 0; idx < total; idx++) {
+    const f = list[idx];
+    const nm = f.__rel || f.name;
+    const base = (p) => onp && onp({ i: idx + 1, n: total, name: nm, p, msg: 'Reading' });
+
+    base(0);
+    await new Promise(r => setTimeout(r, 20));
+
+    if (/\.zip$/i.test(f.name)) {
+      await appsDelGroup(f.name);
+      const ff = await loadFflate();
+      let items;
+
+      try {
+        items = await unzipStream(f, ff, p => base(p));
+      } catch (e) {
+        /* odd zip layout: fall back to the in-memory unzip */
+        const out = ff.unzipSync(new Uint8Array(await f.arrayBuffer()));
+        items = Object.keys(out).filter(p => !p.endsWith('/')).map(p => ({ name: p, blob: new Blob([out[p]]), size: out[p].length }));
+      }
+
+      items = items.filter(i => !/(^|\/)(__MACOSX|\.DS_Store)(\/|$)/.test(i.name));
+
+      /* CD images inside a zip go to the disc library, everything else becomes files on the drive */
+      const isos = items.filter(i => /\.iso$/i.test(i.name) && i.size > 3000000);
+      items = items.filter(i => !isos.includes(i));
+
+      for (const i of isos) {
+        const nmI = i.name.split('/').pop();
+        onp && onp({ i: idx + 1, n: total, name: nmI, p: 1, msg: 'Saving disc' });
+        await discPut({ name: nmI, kind: 'cdrom', size: i.size, blob: i.blob, added: Date.now() });
+        ndisc++;
+      }
+
+      const tops = new Set(items.map(i => i.name.split('/')[0]));
+      const hasRootFile = items.some(i => !i.name.includes('/'));
+      const prefix = (tops.size > 1 || hasRootFile) ? f.name.replace(/\.zip$/i, '') + '/' : '';
+      const recs = items.map(i => ({ path: prefix + i.name, group: f.name, blob: i.blob, size: i.size }));
+
+      if (recs.length) {
+        onp && onp({ i: idx + 1, n: total, name: nm, p: 1, msg: 'Saving ' + recs.length + ' files' });
+        await appsPutMany(recs);
+        napps += recs.length;
+      }
+    } else if (f.__rel) {
+      /* file from a picked folder: group by the folder name */
+      const top = f.__group || f.__rel.split('/')[0];
+      const rec = { path: f.__rel, group: top, blob: f, size: f.size };
+      onp && onp({ i: idx + 1, n: total, name: nm, p: 0, msg: 'Saving' });
+      await appsPutMany([rec]);
+      napps++;
+    } else if (DISC_EXT.test(f.name) && f.size > 200000) {
+      onp && onp({ i: idx + 1, n: total, name: nm, p: 0, msg: 'Saving disc' });
+      await discPut({ name: f.name, kind: discKind(f), size: f.size, blob: f, added: Date.now() });
+      ndisc++;
+    } else {
+      await appsDelGroup(f.name);
+      onp && onp({ i: idx + 1, n: total, name: nm, p: 0, msg: 'Saving' });
+      await appsPutMany([{ path: f.name, group: f.name, blob: f, size: f.size }]);
+      napps++;
+    }
+  }
+
+  return { napps, ndisc };
+}
+
+async function updateAppsBtn() {
+  try {
+    const all = await appsAll();
+    const ds = await discsAll();
+    const groups = new Set(all.map(r => r.group)).size;
+    const bits = [];
+    if (groups) bits.push(groups + ' app' + (groups > 1 ? 's' : ''));
+    if (ds.length) bits.push(ds.length + ' disc' + (ds.length > 1 ? 's' : ''));
+    $('#appsBtn').textContent = '🎮 Game Library' + (bits.length ? ' (' + bits.join(', ') + ')' : '');
+  } catch (e) {}
+}
+
+let libBusy = false;
+
+const libSelDisc = () => { try { return localStorage.getItem('pcl_disc') || ''; } catch (e) { return ''; } };
+const libSelSave = v => { try { localStorage.setItem('pcl_disc', v); } catch (e) {} };
+
+const hue = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const letter = s => { const m = String(s).match(/[A-Za-z0-9]/); return m ? m[0].toUpperCase() : '?'; };
+
+/* one app-icon style tile */
+const tileHTML = t => `
+  <div class="ft ${t.on ? '' : 'off'} ${t.k === 'add' ? 'add' : ''}" data-k="${t.k}" data-id="${esc(t.id)}">
+    <div class="ico" style="${t.k === 'add' ? '' : 'background:hsl(' + hue(t.label) + ' 50% 36%)'}">${t.emoji || letter(t.label)}</div>
+    <span class="tick">✓</span>${t.del ? '<span class="del">✕</span>' : ''}
+    <span class="nm">${esc(t.label)}</span>${t.sub ? '<small>' + t.sub + '</small>' : ''}
+  </div>`;
+
+/* every library item as tiles: app folders and discs together */
+function libTiles(all, discs, withDel) {
+  const off = libOff();
+  const sel = libSelDisc();
+  const groups = new Map();
+  for (const r of all) {
+    const g = groups.get(r.group) || { n: 0, size: 0 };
+    g.n++; g.size += r.size;
+    groups.set(r.group, g);
+  }
+  const tiles = [];
+  for (const d of discs) tiles.push({ k: 'disc', id: d.name, label: d.name.replace(/\.[^.]+$/, ''), emoji: d.kind === 'cdrom' ? '💿' : '💾', sub: (KIND_LABEL[d.kind] || 'Disk') + ' · ' + fmt(d.size), on: sel === d.name, del: withDel });
+  for (const [g, v] of groups) tiles.push({ k: 'app', id: g, label: g.replace(/\.zip$/i, ''), sub: v.n + ' file' + (v.n > 1 ? 's' : '') + ' · ' + fmt(v.size), on: !off.has(g), del: withDel });
+  return tiles;
+}
+
+function bindGrid(root, o) {
+  if (!root) return;
+  root.onclick = async e => {
+    const t = e.target.closest('.ft');
+    if (!t) return;
+    const k = t.dataset.k, id = t.dataset.id;
+
+    if (k === 'add') { o.add && o.add(); return; }
+
+    if (e.target.closest('.del')) {
+      if (!confirm('Remove "' + id + '" from your library?')) return;
+      if (k === 'app') { await appsDelGroup(id); const s = libOff(); s.delete(id); libOffSave(s); }
+      else { await discDel(id); if (libSelDisc() === id) libSelSave(''); }
+      updateAppsBtn();
+      o.refresh && o.refresh();
+      return;
+    }
+
+    if (k === 'app') {
+      const s = libOff();
+      if (s.has(id)) s.delete(id); else s.add(id);
+      libOffSave(s);
+      t.classList.toggle('off', s.has(id));
+    } else if (k === 'disc') {
+      const sel = libSelDisc() === id ? '' : id;
+      libSelSave(sel);
+      root.querySelectorAll('.ft[data-k="disc"]').forEach(x => x.classList.toggle('off', x.dataset.id !== sel));
+    }
+    o.onchange && o.onchange();
+  };
+}
+
+async function openApps() {
+  let all = [], discs = [];
+  try { all = await appsAll(); } catch (e) {}
+  try { discs = await discsAll(); } catch (e) {}
+
+  const st = await storageInfo();
+  const pct = st.quota ? Math.min(100, Math.round(st.used / st.quota * 100)) : 0;
+  const gb = n => (n / 1073741824).toFixed(1) + ' GB';
+  const tiles = libTiles(all, discs, true);
+
+  $('#sheetIn').innerHTML = `
+    <h2>🎮 Game Library</h2>
+    <div style="color:#8b95a9;font-size:13.5px">Tap a game to switch it on or off. Blue tick = it goes into the PC. For discs, the ticked one is the CD that loads at boot. ✕ removes it.</div>
+
+    <div class="fgrid" id="lGrid">
+      ${tiles.map(tileHTML).join('')}
+      ${tileHTML({ k: 'add', id: 'add', label: 'Add', emoji: '＋', on: true })}
+    </div>
+
+    <div class="row">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#8b95a9"><span>Phone storage used</span><span>${st.quota ? gb(st.used) + ' of ' + gb(st.quota) : 'unknown'}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      ${st.persisted ? '<div style="font-size:12px;color:#7fd99a">Protected: Android will not clear your library to free space.</div>'
+        : '<button class="btn alt" id="persistBtn" style="padding:8px">Protect my library from auto-clearing</button>'}
+    </div>
+
+    <div class="btns"><button class="btn alt" id="aClose">Close</button></div>`;
+
+  $('#sheet').classList.add('open');
+  $('#aClose').onclick = () => { closeSheet(); updateAppsBtn(); };
+
+  const pb = $('#persistBtn');
+  if (pb) pb.onclick = async () => {
+    let ok = false;
+    try { ok = await navigator.storage.persist(); } catch (e) {}
+    toast(ok ? 'Library protected' : 'Android said no. Installing the app usually allows it.', 4000);
+    openApps();
+  };
+
+  bindGrid($('#lGrid'), { add: openAddMenu, refresh: openApps });
+}
+
+function openAddMenu() {
+  $('#sheetIn').innerHTML = `
+    <h2>＋ Add to library</h2>
+    <div style="color:#8b95a9;font-size:13.5px">After you pick, you get a screen to tick exactly which games to add.</div>
+    <div class="row">
+      <div class="file" style="flex-direction:column;align-items:stretch"><label style="display:block;color:#cfd7e6;margin-bottom:4px">Games, .zip files, discs (.iso / .img). Pick as many as you like.</label><input type="file" id="fApps" multiple></div>
+      <div class="file" style="flex-direction:column;align-items:stretch"><label style="display:block;color:#cfd7e6;margin-bottom:4px">A folder (a single game, or a folder full of games)</label><input type="file" id="fDir" webkitdirectory multiple></div>
+    </div>
+    <div class="btns"><button class="btn alt" id="aBack">Back</button></div>`;
+  $('#aBack').onclick = openApps;
+  $('#fApps').onchange = e => stageImport([...e.target.files]);
+  $('#fDir').onchange = e => stageImport([...e.target.files]);
+}
+
+/* turn what was picked into one tile per game */
+function buildEntries(list) {
+  const isDir = list.some(f => f.webkitRelativePath);
+
+  if (!isDir) {
+    return list.map(f => ({
+      name: f.name, size: f.size, files: [f],
+      emoji: /\.iso$/i.test(f.name) ? '💿' : DISC_EXT.test(f.name) && f.size > 200000 ? '💾' : /\.zip$/i.test(f.name) ? '🗜️' : null
+    }));
+  }
+
+  const dirs = new Map();
+  const loose = [];
+  let root = '';
+
+  for (const f of list) {
+    const parts = f.webkitRelativePath.split('/');
+    root = parts[0];
+    if (parts.length === 2) loose.push(f);
+    else if (parts.length > 2) {
+      const d = dirs.get(parts[1]) || [];
+      d.push(f);
+      dirs.set(parts[1], d);
+    }
+  }
+
+  /* a folder with no sub-folders is one game; otherwise each sub-folder is a game */
+  if (!dirs.size) {
+    list.forEach(f => { f.__rel = f.webkitRelativePath; f.__group = root; });
+    return [{ name: root, size: list.reduce((n, f) => n + f.size, 0), files: list }];
+  }
+
+  const out = [];
+  for (const [name, files] of dirs) {
+    files.forEach(f => { f.__rel = f.webkitRelativePath.split('/').slice(1).join('/'); f.__group = name; });
+    out.push({ name, size: files.reduce((n, f) => n + f.size, 0), files });
+  }
+  for (const f of loose) {
+    out.push({ name: f.name, size: f.size, files: [f], emoji: /\.iso$/i.test(f.name) ? '💿' : null });
+  }
+  return out;
+}
+
+function stageImport(list) {
+  if (!list.length) return;
+  const entries = buildEntries(list);
+  const sel = new Set(entries.map((_, i) => i));
+
+  const render = () => {
+    $('#cGo').textContent = sel.size ? 'Add ' + sel.size + (sel.size === 1 ? ' item' : ' items') : 'Nothing ticked';
+    $('#cGo').disabled = !sel.size;
+  };
+
+  $('#sheetIn').innerHTML = `
+    <h2>Choose what to add</h2>
+    <div style="color:#8b95a9;font-size:13.5px">${entries.length} found. Tap to untick anything you don't want.</div>
+    <div class="fgrid" id="cGrid">
+      ${entries.map((en, i) => tileHTML({
+        k: 'c', id: String(i), label: en.name.replace(/\.zip$/i, ''), emoji: en.emoji, on: true,
+        sub: fmt(en.size) + (en.files.length > 1 ? ' · ' + en.files.length + ' files' : '')
+      })).join('')}
+    </div>
+    <div class="btns"><button class="btn alt" id="cAll">Tick all / none</button></div>
+    <div class="btns"><button class="btn alt" id="cCancel">Cancel</button><button class="btn" id="cGo"></button></div>`;
+  $('#sheet').classList.add('open');
+
+  $('#cGrid').onclick = e => {
+    const t = e.target.closest('.ft');
+    if (!t) return;
+    const i = +t.dataset.id;
+    if (sel.has(i)) sel.delete(i); else sel.add(i);
+    t.classList.toggle('off', !sel.has(i));
+    render();
+  };
+  $('#cAll').onclick = () => {
+    const all = sel.size < entries.length;
+    entries.forEach((_, i) => all ? sel.add(i) : sel.delete(i));
+    $('#cGrid').querySelectorAll('.ft').forEach(t => t.classList.toggle('off', !sel.has(+t.dataset.id)));
+    render();
+  };
+  $('#cCancel').onclick = openApps;
+  $('#cGo').onclick = () => runImport(entries.filter((_, i) => sel.has(i)).flatMap(en => en.files));
+  render();
+}
+
+async function runImport(list) {
+  if (!list.length || libBusy) return;
+  libBusy = true;
+
+  $('#sheetIn').innerHTML = `
+    <h2>Adding to your library…</h2>
+    <div class="row"><div id="impTxt" style="font-size:13.5px;word-break:break-all">Starting…</div><div class="bar"><i id="impBar" style="width:0%"></i></div></div>
+    <div style="color:#8b95a9;font-size:12.5px">Big games take a minute. Keep this screen open.</div>`;
+
+  /* many small files: update the text only every so often */
+  let lastTxt = 0;
+  const onp = o => {
+    const whole = ((o.i - 1) + o.p) / o.n;
+    $('#impBar').style.width = Math.round(whole * 100) + '%';
+    const now = performance.now();
+    if (now - lastTxt > 120 || o.p === 0) { lastTxt = now; $('#impTxt').textContent = o.msg + ' ' + (o.n > 1 ? '(' + o.i + '/' + o.n + ') ' : '') + o.name; }
+  };
+
+  try {
+    const r = await importFiles(list, onp);
+    const bits = [];
+    if (r.ndisc) bits.push(r.ndisc + ' disc' + (r.ndisc > 1 ? 's' : ''));
+    if (r.napps) bits.push(r.napps + ' file' + (r.napps > 1 ? 's' : ''));
+    toast('Added ' + (bits.join(' and ') || 'nothing'));
+  } catch (err) {
+    toast('Import failed: ' + (err && err.name === 'QuotaExceededError' ? 'not enough phone storage' : (err.message || err)), 6000);
+  }
+
+  libBusy = false;
+  updateAppsBtn();
+  openApps();
+}
+
+$('#appsBtn').onclick = openApps;
+
+/* ---------- home screen ---------- */
+async function renderGrid() {
+  const g = $('#grid');
+  const states = await Promise.all(OSES.map(o => hasState(o.id)));
+
+  g.innerHTML = '';
+
+  OSES.forEach((o, i) => {
+    const saved = states[i];
+    const b = document.createElement('button');
+
+    b.className = 'card';
+    b.innerHTML = `
+      <div class="ic">${o.icon}</div>
+      <b>${o.name}</b>
+      <span class="d">${o.d}</span>
+      <span class="tag ${saved ? 'on' : (o.mac ? 'warn' : '')}">
+        ${saved ? 'saved state' : o.tag}
+      </span>
+    `;
+
+    b.onclick = () => openSheet(o);
+    g.appendChild(b);
+  });
+}
+
+async function openSheet(o) {
+  if (o.macOnline) return openMac();
+  if (o.info) return openInfo(o);
+
+  let lib = [], discs = [];
+  try { lib = await appsAll(); } catch (e) {}
+  try { discs = await discsAll(); } catch (e) {}
+  if (libSelDisc() && !discs.some(d => d.name === libSelDisc())) libSelSave('');
+  const enabledRecs = () => { const o2 = libOff(); return lib.filter(r => !o2.has(r.group)); };
+  const curSize = () => enabledRecs().reduce((n, r) => n + r.size, 0);
+
+  files.boot = null;
+  files.game = null;
+
+  const s = $('#sheetIn');
+
+  const ramOptions = [32, 64, 128, 256, 512, 1024, 2048]
+    .map(m => `<option value="${m}" ${m === o.mem ? 'selected' : ''}>${m >= 1024 ? (m / 1024) + ' GB' : m + ' MB'}</option>`)
+    .join('');
+
+  s.innerHTML = `
+    <h2>${o.icon} ${o.name}</h2>
+    <div style="color:#8b95a9;font-size:13.5px">${o.d}</div>
+
+    ${o.custom ? `
+      <div class="row">
+        <label>${o.id === 'win' ? 'Windows install disc / disk (.iso, .img)' : 'Boot disc / disk (.iso, .img)'} *</label>
+        <div class="file">
+          <input type="file" id="fBoot" accept=".iso,.img,.ima,.vfd,.flp,.bin,.hdd,.vhd">
+        </div>
+      </div>
+    ` : ''}
+
+    ${o.blank ? `
+      <div class="row">
+        <label>Blank hard disk (for installing an OS onto)</label>
+        <select id="blank">
+          <option value="0">None</option>
+          <option value="268435456">256 MB</option>
+          <option value="536870912" selected>512 MB</option>
+          <option value="1073741824">1 GB</option>
+        </select>
+      </div>
+    ` : ''}
+
+    <div class="row">
+      ${(lib.length || discs.length) ? `
+      <label>Your games. Tap to choose what goes into this PC (blue tick = on). Discs: one at a time.</label>
+      <div class="fgrid" id="bGrid">${libTiles(lib, discs, false).map(tileHTML).join('')}</div>` : '<label>Your library is empty. Add games with 🎮 Game Library on the home screen.</label>'}
+      <label>Or pick one file just for this session: .iso as CD-ROM, small .img as floppy, big .img as second hard disk</label>
+      <div class="file">
+        <input type="file" id="fGame" accept=".iso,.img,.ima,.vfd,.flp,.bin,.hdd,.vhd">
+      </div>
+    </div>
+
+    ${o.state ? `
+    <div class="row">
+      <label>Start mode</label>
+      <select id="mode">
+        <option value="instant" selected>Instant desktop (official snapshot, skips booting)</option>
+        <option value="fresh">Fresh boot (slower)</option>
+      </select>
+    </div>` : ''}
+
+    ${lib.length ? `
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="useApps" checked> Put the ticked apps on a drive (<span id="appsCnt"></span>)</label>
+      <select id="appsFree">
+        <option value="16777216">+16 MB free space</option>
+        <option value="67108864" selected>+64 MB free space</option>
+        <option value="268435456">+256 MB free space</option>
+        <option value="1073741824">+1 GB free space</option>
+        <option value="4294967296">+4 GB free space</option>
+      </select>
+      <label id="appsBig" style="display:none">Over about 500 MB: DOS and Windows 3.1 can't see the drive. Over about 2 GB: Windows 95 can't either. Windows 98 and newer, ReactOS and Linux can.</label>
+      <label id="appsNote" style="display:none">Snapshots cannot take a new drive. Choose Fresh boot to attach your apps. A disc can still be swapped in with 💿 once the PC runs.</label>
+    </div>` : ''}
+
+    <div class="row">
+      <label>Memory for the virtual PC (snapshot start always uses ${o.mem} MB). Windows 95/98/ME can crash above 512 MB.</label>
+      <select id="ram">${ramOptions}</select>
+    </div>
+
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="snd"> Sound (uses more CPU, slower)</label>
+      <label class="chk"><input type="checkbox" id="fast"> ⚡ Load big drives into RAM (smoothest in-game, slower start, up to 1 GB)</label>
+      <label>Screen redraw rate. Lower frees CPU for the PC itself.</label>
+      <select id="fps">
+        <option value="30" selected>30 fps (recommended)</option>
+        <option value="20">20 fps (faster PC)</option>
+        <option value="60">60 fps (smooth picture, slower PC)</option>
+      </select>
+    </div>
+
+    <div class="btns">
+      <button class="btn alt" id="sCancel">Cancel</button>
+      <button class="btn" id="sBoot">Boot</button>
+    </div>
+
+    <div class="btns" id="resumeRow" style="display:none">
+      <button class="btn alt" id="sResume">Resume saved state</button>
+    </div>
+  `;
+
+  $('#sheet').classList.add('open');
+
+  const syncApps = () => {
+    const c = $('#useApps');
+    if (!c) return;
+    const inst = !!($('#mode') && $('#mode').value === 'instant');
+    c.disabled = inst;
+    $('#appsNote').style.display = inst ? 'block' : 'none';
+    const er = enabledRecs();
+    $('#appsCnt').textContent = er.length + ' file' + (er.length === 1 ? '' : 's') + ', ' + fmt(curSize());
+    c.disabled = c.disabled || !er.length;
+    const tot = curSize() + +$('#appsFree').value;
+    $('#appsBig').style.display = (!inst && tot > 500 * 1048576) ? 'block' : 'none';
+  };
+  if ($('#mode')) $('#mode').onchange = syncApps;
+  if ($('#appsFree')) $('#appsFree').onchange = syncApps;
+  syncApps();
+  bindGrid($('#bGrid'), { onchange: syncApps });
+
+  const bootOpts = resume => {
+    const inst = !resume && !!(o.state && $('#mode') && $('#mode').value === 'instant');
+    return {
+      ram: +$('#ram').value,
+      blank: $('#blank') ? +$('#blank').value : 0,
+      resume,
+      instant: inst,
+      apps: !!($('#useApps') && $('#useApps').checked && !inst && enabledRecs().length),
+      appsFree: $('#appsFree') ? +$('#appsFree').value : 67108864,
+      sound: !!($('#snd') && $('#snd').checked),
+      fast: !!($('#fast') && $('#fast').checked),
+      fps: $('#fps') ? +$('#fps').value : 30
+    };
+  };
+
+  const fb = $('#fBoot');
+  if (fb) fb.onchange = () => files.boot = fb.files[0] || null;
+
+  $('#fGame').onchange = e => { files.game = e.target.files[0] || null; if (files.game && libSelDisc()) { libSelSave(''); const g = $('#bGrid'); if (g) g.querySelectorAll('.ft[data-k="disc"]').forEach(x => x.classList.add('off')); } };
+  $('#sCancel').onclick = closeSheet;
+
+  const pickLib = async () => {
+    const n = libSelDisc();
+    if (n && !files.game) { try { files.game = await discFile(n); } catch (e) { toast('Could not open that disc'); } }
+  };
+
+  $('#sBoot').onclick = async () => {
+    await pickLib();
+
+    if (o.custom && !files.boot && !(o.id === 'custom' && files.game)) {
+      toast('Pick a boot disc / disk first');
+      return;
+    }
+
+    const opts = bootOpts(false);
+
+    closeSheet();
+    boot(o, opts);
+  };
+
+  hasState(o.id).then(h => {
+    if (!h) return;
+
+    $('#resumeRow').style.display = 'flex';
+
+    $('#sResume').onclick = async () => {
+      await pickLib();
+      if (o.custom && !files.boot) {
+        toast('Pick the same boot disk again to resume');
+        return;
+      }
+
+      const opts = bootOpts(true);
+
+      closeSheet();
+      boot(o, opts);
+    };
+  });
+}
+
+
+function openInfo(o) {
+  $('#sheetIn').innerHTML = `
+    <h2>${o.icon} ${o.name}</h2>
+    <div style="font-size:14px;line-height:1.5;color:#cfd7e6">
+      <p><b>Straight answer: Windows 10 and 11 can't run in this launcher.</b></p>
+      <p>The PC engine here (v86) is a 32-bit emulator running inside a web page. Windows 11 is 64-bit only. Windows 10 needs hardware features the engine doesn't have. Even a 32-bit Windows 10 would take many minutes to start and crawl after that, because a browser is emulating every instruction one by one.</p>
+      <p><b>What does work, newest first:</b></p>
+      <ul style="padding-left:18px;margin:6px 0">
+        <li><b>Windows 2000, 98, 95</b> and <b>ReactOS</b> (a Windows-compatible system) are in the grid and run real Windows programs and old games.</li>
+        <li><b>Winlator</b> is a separate Android app that runs Windows PC games on the phone's own processor. It is the real route to Windows games on a phone.</li>
+        <li><b>Cloud PC / cloud gaming</b> streams a real Windows 10/11 machine to the phone. Needs a good connection and usually a subscription.</li>
+      </ul>
+      <p>If you own a 32-bit Windows ISO and want to experiment, the <b>Windows (your ISO)</b> tile takes it. Expect Windows XP and older to work best.</p>
+    </div>
+    <div class="btns">
+      <button class="btn alt" id="iClose">Close</button>
+      <button class="btn" id="iWin">Open ReactOS</button>
+    </div>
+    <div class="btns"><a class="btn alt" style="text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://github.com/brunodev85/winlator">Winlator ↗</a></div>`;
+  $('#sheet').classList.add('open');
+  $('#iClose').onclick = closeSheet;
+  $('#iWin').onclick = () => { const r = OSES.find(x => x.id === 'reactos'); if (r) openSheet(r); };
+}
+
+const closeSheet = () => $('#sheet').classList.remove('open');
+
+$('#sheet').addEventListener('click', e => {
+  if (e.target.id === 'sheet') closeSheet();
+});
+
+/* ---------- Mac ---------- */
+function openMac() {
+  const url = 'https://infinitemac.org/';
+
+  $('#mf').src = url;
+  $('#mOpen').href = url;
+  $('#mac').classList.add('on');
+}
+
+$('#mBack').onclick = () => {
+  $('#mac').classList.remove('on');
+  $('#mf').src = 'about:blank';
+};
+
+/* ---------- emulator engine ---------- */
+function loadEngine() {
+  return E || (E = new Promise((res, rej) => {
+    const V = 'https://cdn.jsdelivr.net/npm/v86@0.5.473/build/';
+
+    const urls = {
+      wasm: V + 'v86.wasm',
+      bios: 'https://cdn.jsdelivr.net/gh/copy/v86@master/bios/seabios.bin',
+      vga: 'https://cdn.jsdelivr.net/gh/copy/v86@master/bios/vgabios.bin'
+    };
+
+    const s = document.createElement('script');
+    s.src = V + 'libv86.js';
+
+    s.onload = () => window.V86 ? res(urls) : rej(new Error('Engine did not initialise'));
+    s.onerror = () => rej(new Error('Engine failed to load. Check your internet connection.'));
+
+    document.head.appendChild(s);
+  }));
+}
+
+async function remoteImg(url, big) {
+  let size = 0;
+  let ranges = false;
+
+  try {
+    const r = await fetch(url, { method: 'HEAD' });
+
+    if (r.ok) {
+      size = +r.headers.get('content-length') || 0;
+      ranges = /bytes/i.test(r.headers.get('accept-ranges') || '');
+    }
+  } catch (e) {}
+
+  if (big && size > 0 && ranges) {
+    return { url, async: true, size };
+  }
+
+  return { url };
+}
+
+function classify(f) {
+  const n = f.name.toLowerCase();
+
+  if (n.endsWith('.iso')) return 'cdrom';
+  if (f.size <= 3000000 || /\.(vfd|flp|ima)$/.test(n)) return 'fd';
+  return 'hd';
+}
+
+function resetScreen() {
+  lastKey = '';
+  const sc = $('#screen');
+
+  sc.innerHTML = `
+    <div style="white-space:pre;font:14px monospace;line-height:14px"></div>
+    <canvas style="display:none"></canvas>
+  `;
+
+  sc.style.transform = '';
+  sc.style.width = '';
+  sc.style.height = '';
+}
+
+function ov(t, s, p) {
+  $('#ov').classList.remove('hide');
+  $('#ovT').textContent = t;
+  $('#ovS').textContent = s || '';
+  $('#ovB').style.width = (p == null ? 0 : p) + '%';
+}
+
+async function boot(o, opt) {
+  cur = o;
+  paused = false;
+  setTimeout(showKb, 50);
+  $('#bPause').textContent = '⏸';
+
+  $('#run').classList.add('on');
+  $('#title').textContent = o.name;
+
+  resetScreen();
+  ov('Starting engine…', '', 5);
+
+  try {
+    const urls = await loadEngine();
+
+    const cfg = {
+      wasm_path: urls.wasm,
+      bios: { url: urls.bios },
+      vga_bios: { url: urls.vga },
+
+      memory_size: (opt.instant ? o.mem : opt.ram) * 1048576,
+      vga_memory_size: 8 * 1048576,
+
+      screen_container: $('#screen'),
+      autostart: true,
+
+      /* adapter must exist so keyboard_send_text works; we turn its own DOM listeners off below */
+      disable_keyboard: false,
+      disable_mouse: true,
+      disable_speaker: !opt.sound
+    };
+
+    if (o.mac) cfg.mac_address_translation = true;
+    if (o.acpi) cfg.acpi = true;
+    if (o.net) cfg.net_device = { type: o.net };
+
+    let usedCd = false;
+    let usedFda = false;
+    let usedHda = false;
+
+    const copy = x => JSON.parse(JSON.stringify(x));
+
+    /* big files: lazy with read-ahead cache (default), or fully in RAM if asked */
+    const mkDisk = f => {
+      if (f.size >= 268435456) {
+        if (opt.fast && f.size <= 1073741824) return { buffer: f, async: false };
+        return { buffer: fastFile(f) };
+      }
+      return { buffer: f };
+    };
+
+    if (o.bzimage) { cfg.bzimage = copy(o.bzimage); cfg.cmdline = o.cmdline; }
+    if (o.hda) { cfg.hda = copy(o.hda); usedHda = true; }
+    if (o.cdrom) { cfg.cdrom = copy(o.cdrom); usedCd = true; }
+    if (o.fda) {
+      cfg.fda = copy(o.fda);
+      usedFda = true;
+      /* KolibriOS: official server first, fall back to the mirror if it is unreachable */
+      if (o.fdaFallback) {
+        try { await fetch(cfg.fda.url, { method: 'HEAD', mode: 'no-cors' }); }
+        catch (e) { cfg.fda = copy(o.fdaFallback); }
+      }
+    }
+    if (opt.instant && o.state) cfg.initial_state = copy(o.state);
+
+    if (files.boot) {
+      const k = classify(files.boot);
+
+      if (k === 'cdrom') {
+        cfg.cdrom = mkDisk(files.boot);
+        usedCd = true;
+      } else if (k === 'fd') {
+        cfg.fda = { buffer: await files.boot.arrayBuffer() };
+        usedFda = true;
+      } else {
+        cfg.hda = mkDisk(files.boot);
+        usedHda = true;
+      }
+    }
+
+    if (opt.blank > 0 && !usedHda) {
+      cfg.hda = { buffer: new ArrayBuffer(opt.blank) };
+      usedHda = true;
+    }
+
+    if (opt.apps) {
+      ov('Preparing your apps drive…', 'Linking your files into a disk (no copying)', 15);
+      await new Promise(r => setTimeout(r, 30));
+      const offG = libOff();
+      const recs = (await appsAll()).filter(r => !offG.has(r.group));
+      if (!recs.length) throw new Error('Every app in your library is switched off');
+      const entries = recs.map(r => ({
+        path: r.path,
+        size: r.blob.size,
+        mtime: r.blob.lastModified || Date.now(),
+        blob: r.blob
+      }));
+      const built = await buildFatDisk(entries, opt.appsFree || 67108864, 'MYAPPS');
+      const drive = mkDisk(built.file);
+
+      if (!usedHda) {
+        cfg.hda = drive;
+        usedHda = true;
+      } else {
+        cfg.hdb = drive;
+      }
+    }
+
+    if (files.game) {
+      const k = classify(files.game);
+
+      if (k === 'cdrom' && !usedCd) {
+        cfg.cdrom = mkDisk(files.game);
+        usedCd = true;
+      } else if (k === 'fd' && !usedFda) {
+        cfg.fda = { buffer: await files.game.arrayBuffer() };
+        usedFda = true;
+      } else if (k === 'fd') {
+        cfg.fdb = { buffer: await files.game.arrayBuffer() };
+      } else if (k === 'hd') {
+        if (!usedHda) {
+          cfg.hda = mkDisk(files.game);
+          usedHda = true;
+        } else if (cfg.hdb) {
+          toast('Only two hard disks fit: extra game disk skipped');
+        } else {
+          cfg.hdb = mkDisk(files.game);
+        }
+      } else {
+        toast('CD slot already used: use a .img for the game');
+      }
+    }
+
+    if (!cfg.hda && !cfg.fda && !cfg.cdrom && !cfg.bzimage) {
+      throw new Error('Nothing to boot');
+    }
+
+    if (opt.resume) {
+      const st = await idbGet(o.id);
+
+      if (st) {
+        cfg.initial_state = { buffer: st };
+      } else {
+        toast('No saved state found, booting fresh');
+      }
+    }
+
+    ov('Booting…', '', 20);
+
+    emu = new V86(cfg);
+
+    /* Our own handlers send keys; stop the library's window listener so keys are not doubled */
+    const kbOff = () => { try { emu && emu.keyboard_set_enabled && emu.keyboard_set_enabled(false); } catch (e) {} };
+    kbOff();
+    emu.add_listener('emulator-ready', kbOff);
+
+    emu.add_listener('download-progress', e => {
+      let p = null;
+
+      if (e.total) p = Math.floor(e.loaded / e.total * 100);
+
+      const mb = e.loaded ? (e.loaded / 1048576).toFixed(1) + ' MB' : '';
+
+      ov(
+        'Downloading ' + (e.file_name || '').split('/').pop(),
+        mb + (p != null ? ' · ' + p + '%' : ''),
+        p == null ? 30 : p
+      );
+    });
+
+    emu.add_listener('download-error', e => {
+      ov(
+        'Download failed',
+        'Check your connection, or load your own image file instead. ' +
+        (e && e.file_name ? e.file_name : ''),
+        0
+      );
+    });
+
+    /* limit how often the picture is redrawn: the PC gets the CPU time instead */
+    const fpsCap = () => {
+      try {
+        const sa = emu && emu.screen_adapter;
+        if (!sa || sa.__capped || !sa.update_screen) return;
+        const target = opt.fps || 30;
+        if (target >= 60) { sa.__capped = true; return; }
+        const orig = sa.update_screen;
+        const gap = 1000 / target - 2;
+        let last = 0;
+        sa.update_screen = function () {
+          const now = performance.now();
+          if (now - last < gap) return this.timer();
+          last = now;
+          sa.__draws = (sa.__draws || 0) + 1;
+          return orig.call(this);
+        };
+        sa.__capped = true;
+      } catch (e) {}
+    };
+    fpsCap();
+    emu.add_listener('emulator-ready', fpsCap);
+    emu.add_listener('emulator-started', fpsCap);
+
+    emu.add_listener('emulator-started', () => {
+      setTimeout(() => $('#ov').classList.add('hide'), 700);
+      if (o.autoEnter) setTimeout(() => tap('Enter'), 3500);
+    });
+
+    emu.add_listener('screen-set-mode', () => {
+      $('#ov').classList.add('hide');
+    });
+
+    try {
+      wake = await navigator.wakeLock?.request('screen');
+    } catch (e) {}
+
+  } catch (err) {
+    ov('Could not start', String(err && err.message || err), 0);
+  }
+}
+
+async function stopEmu() {
+  try {
+    if (emu) {
+      if (emu.destroy) await emu.destroy();
+      else await emu.stop();
+    }
+  } catch (e) {}
+
+  emu = null;
+
+  try {
+    wake && wake.release();
+  } catch (e) {}
+
+  wake = null;
+  for (const c in mods) mods[c] = 0;
+  pressed.clear();
+  kbVisAll();
+  heldLeft = false;
+
+  $('#bDrag').classList.remove('on');
+  resetScreen();
+}
+
+$('#bHome').onclick = async () => {
+  if (emu && !confirm('Exit? Unsaved progress will be lost (use Save first).')) return;
+
+  await stopEmu();
+  if (imm) setImm(false);
+  $('#run').classList.remove('on');
+  renderGrid();
+};
+
+
+$('#bDisc').onclick = async () => {
+  if (!emu) return;
+  let discs = [];
+  try { discs = await discsAll(); } catch (e) {}
+
+  const rows = discs.map(d =>
+    `<div class="app"><span>${esc(d.name)}<small>${KIND_LABEL[d.kind] || 'Disk'} · ${fmt(d.size)}</small></span><button class="k" data-ins="${esc(d.name)}">Insert</button></div>`
+  ).join('') || '<div style="color:#8b95a9;margin:10px 0">No discs in your library yet. Add some in 🎮 Game Library, or pick a file below.</div>';
+
+  $('#sheetIn').innerHTML = `
+    <h2>💿 Change disc</h2>
+    <div style="color:#8b95a9;font-size:13.5px">Swap the CD or floppy while the PC runs, like a multi-disc game asking for disc 2. Inside the PC, open the drive again (or press F5) after inserting.</div>
+    ${rows}
+    <div class="row"><label>Pick a file now</label><div class="file"><input type="file" id="fSwap" accept=".iso,.img,.ima,.vfd,.flp,.bin"></div></div>
+    <div class="btns"><button class="btn alt" id="dEject">Eject CD</button><button class="btn alt" id="dClose">Close</button></div>`;
+
+  $('#sheet').classList.add('open');
+
+  const put = async f => {
+    try {
+      const k = discKind(f);
+      const disk = f.size >= 268435456 ? { buffer: fastFile(f) } : { buffer: f };
+      if (k === 'fd') await emu.set_fda({ buffer: await f.arrayBuffer() });
+      else await emu.set_cdrom(disk);
+      toast('Inserted ' + f.name, 3000);
+      closeSheet();
+    } catch (e) {
+      toast('Could not insert: ' + (e.message || e), 5000);
+    }
+  };
+
+  $('#dClose').onclick = closeSheet;
+  $('#dEject').onclick = () => { try { emu.eject_cdrom(); toast('CD ejected'); closeSheet(); } catch (e) { toast('No CD to eject'); } };
+  $('#fSwap').onchange = e => e.target.files[0] && put(e.target.files[0]);
+  $('#sheetIn').querySelectorAll('[data-ins]').forEach(b => {
+    b.onclick = async () => { const f = await discFile(b.dataset.ins); if (f) put(f); };
+  });
+};
+
+$('#bPause').onclick = async () => {
+  if (!emu) return;
+
+  if (paused) {
+    await emu.run();
+    paused = false;
+    $('#bPause').textContent = '⏸';
+  } else {
+    await emu.stop();
+    paused = true;
+    $('#bPause').textContent = '▶';
+  }
+};
+
+$('#bSave').onclick = async () => {
+  if (!emu || !cur) return;
+
+  try {
+    toast('Saving…');
+
+    const st = await emu.save_state();
+    await idbPut(cur.id, st);
+
+    toast('Saved (' + (st.byteLength / 1048576).toFixed(0) + ' MB)');
+  } catch (e) {
+    toast('Save failed: ' + (e.message || e), 4000);
+  }
+};
+
+function setImm(on) {
+  imm = on;
+  const run = $('#run');
+  run.classList.toggle('imm', on);
+  run.classList.remove('menu');
+
+  if (on) {
+    try {
+      const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      if (p) {
+        fsApi = true;
+        p.then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} })
+         .catch(() => { fsApi = false; });
+      }
+    } catch (e) { fsApi = false; }
+    toast('Full screen. Tap ☰ for controls', 3000);
+  } else {
+    fsApi = false;
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    try { screen.orientation.unlock(); } catch (e) {}
+  }
+
+  lastKey = '';
+  setTimeout(fit, 80);
+  setTimeout(fit, 500);
+  setTimeout(() => { if (KBP.on) { buildKb(); layoutKb(); } }, 120);
+}
+
+$('#bFs').onclick = () => setImm(!imm);
+$('#fab').onclick = () => $('#run').classList.toggle('menu');
+$('#bFill').onclick = () => {
+  stretch = !stretch;
+  $('#bFill').classList.toggle('on', stretch);
+  lastKey = '';
+  fit();
+};
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && imm && fsApi) setImm(false);
+});
+
+/* ---------- screen scaling ---------- */
+function fit() {
+  const box = $('#stage');
+  const sc = $('#screen');
+
+  if (!box || !emu) return;
+
+  const cv = sc.querySelector('canvas');
+  const tx = sc.firstElementChild;
+
+  let w, h;
+
+  if (cv && cv.style.display !== 'none' && cv.width > 1) {
+    w = cv.offsetWidth || cv.width;
+    h = cv.offsetHeight || cv.height;
+  } else {
+    w = tx.scrollWidth;
+    h = tx.scrollHeight;
+  }
+
+  if (!w || !h) return;
+
+  /* skip all layout work when nothing changed */
+  const key = w + 'x' + h + '/' + box.clientWidth + 'x' + box.clientHeight + '/' + stretch;
+  if (key === lastKey) return;
+  lastKey = key;
+
+  const sx = box.clientWidth / w;
+  const sy = box.clientHeight / h;
+  const s = Math.min(sx, sy);
+  const ax = stretch ? sx : s;
+  const ay = stretch ? sy : s;
+
+  sc.style.width = w + 'px';
+  sc.style.height = h + 'px';
+  sc.style.transform = `scale(${ax},${ay})`;
+  sc.style.left = Math.max(0, (box.clientWidth - w * ax) / 2) + 'px';
+  sc.style.top = Math.max(0, (box.clientHeight - h * ay) / 2) + 'px';
+}
+
+setInterval(fit, 500);
+addEventListener('resize', () => { lastKey = ''; fit(); });
+addEventListener('orientationchange', () => setTimeout(() => { lastKey = ''; fit(); }, 300));
+
+/* ---------- touch mouse ---------- */
+const stage = $('#stage');
+let sens = 1.7;
+
+let tch = {};
+let startT = 0;
+let moved = 0;
+let lastTapEnd = 0;
+let fingers = 0;
+let accX = 0;
+let accY = 0;
+let twoMoved = false;
+let dragTap = false;
+
+const click = (l, m, r) => {
+  if (!emu) return;
+  emu.bus.send('mouse-click', [l, m, r]);
+  onMouse(l, m, r);
+};
+
+const resumeAudio = () => {
+  try {
+    const a = emu && emu.speaker_adapter && emu.speaker_adapter.audio_context;
+    a && a.state !== 'running' && a.resume();
+  } catch (e) {}
+};
+
+stage.addEventListener('touchstart', e => {
+  if (!emu) return;
+
+  resumeAudio();
+  if (imm) $('#run').classList.remove('menu');
+
+  for (const t of e.changedTouches) {
+    tch[t.identifier] = { x: t.clientX, y: t.clientY };
+  }
+
+  fingers = Object.keys(tch).length;
+
+  if (fingers === 1) {
+    startT = Date.now();
+    moved = 0;
+    twoMoved = false;
+
+    if (Date.now() - lastTapEnd < 280) {
+      dragTap = true;
+      click(true, false, false);
+    } else {
+      dragTap = false;
+    }
+  }
+
+  if (fingers === 2) {
+    twoMoved = false;
+    startT = Date.now();
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchmove', e => {
+  if (!emu) return;
+
+  if (fingers >= 2) {
+    let dy = 0;
+
+    for (const t of e.changedTouches) {
+      const p = tch[t.identifier];
+
+      if (p) {
+        dy += t.clientY - p.y;
+        p.x = t.clientX;
+        p.y = t.clientY;
+      }
+    }
+
+    if (Math.abs(dy) > 0) {
+      twoMoved = true;
+
+      emu.bus.send('mouse-wheel', [
+        Math.sign(dy) * Math.min(3, Math.ceil(Math.abs(dy) / 8)),
+        0
+      ]);
+    }
+  } else {
+    for (const t of e.changedTouches) {
+      const p = tch[t.identifier];
+      if (!p) continue;
+
+      const dx = (t.clientX - p.x) * sens;
+      const dy = (t.clientY - p.y) * sens;
+
+      p.x = t.clientX;
+      p.y = t.clientY;
+      moved += Math.abs(dx) + Math.abs(dy);
+
+      accX += dx;
+      accY += dy;
+
+      const ix = Math.trunc(accX);
+      const iy = Math.trunc(accY);
+
+      accX -= ix;
+      accY -= iy;
+
+      if (ix || iy) emu.bus.send('mouse-delta', [ix, -iy]);
+    }
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchend', e => {
+  if (!emu) return;
+
+  const wasFingers = fingers;
+
+  for (const t of e.changedTouches) {
+    delete tch[t.identifier];
+  }
+
+  fingers = Object.keys(tch).length;
+  const dt = Date.now() - startT;
+
+  if (wasFingers === 1 && fingers === 0) {
+    if (dragTap && !heldLeft) {
+      click(false, false, false);
+    } else if (moved < 12 && dt < 300 && !heldLeft) {
+      click(true, false, false);
+      setTimeout(() => click(false, false, false), 40);
+    } else if (heldLeft && moved < 12 && dt < 300) {
+      click(false, false, false);
+      heldLeft = false;
+      $('#bDrag').classList.remove('on');
+    }
+
+    lastTapEnd = Date.now();
+  }
+
+  if (wasFingers === 2 && fingers === 0 && !twoMoved && dt < 350) {
+    click(false, false, true);
+    setTimeout(() => click(false, false, false), 40);
+  }
+
+  e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchcancel', () => {
+  tch = {};
+  fingers = 0;
+});
+
+$('#bL').onclick = () => {
+  click(true, false, false);
+  setTimeout(() => click(false, false, false), 50);
+};
+
+$('#bR').onclick = () => {
+  click(false, false, true);
+  setTimeout(() => click(false, false, false), 50);
+};
+
+$('#bDrag').onclick = () => {
+  heldLeft = !heldLeft;
+
+  click(heldLeft, false, false);
+  $('#bDrag').classList.toggle('on', heldLeft);
+
+  toast(heldLeft ? 'Left button held: move finger, tap to release' : 'Released');
+};
+
+/* ---------- keyboard scancodes ---------- */
+const SC = {
+  Escape: [1],
+  Digit1: [2],
+  Digit2: [3],
+  Digit3: [4],
+  Digit4: [5],
+  Digit5: [6],
+  Digit6: [7],
+  Digit7: [8],
+  Digit8: [9],
+  Digit9: [10],
+  Digit0: [11],
+  Minus: [12],
+  Equal: [13],
+  Backspace: [14],
+  Tab: [15],
+
+  KeyQ: [16],
+  KeyW: [17],
+  KeyE: [18],
+  KeyR: [19],
+  KeyT: [20],
+  KeyY: [21],
+  KeyU: [22],
+  KeyI: [23],
+  KeyO: [24],
+  KeyP: [25],
+  BracketLeft: [26],
+  BracketRight: [27],
+  Enter: [28],
+  ControlLeft: [29],
+
+  KeyA: [30],
+  KeyS: [31],
+  KeyD: [32],
+  KeyF: [33],
+  KeyG: [34],
+  KeyH: [35],
+  KeyJ: [36],
+  KeyK: [37],
+  KeyL: [38],
+  Semicolon: [39],
+  Quote: [40],
+  Backquote: [41],
+  ShiftLeft: [42],
+  Backslash: [43],
+
+  KeyZ: [44],
+  KeyX: [45],
+  KeyC: [46],
+  KeyV: [47],
+  KeyB: [48],
+  KeyN: [49],
+  KeyM: [50],
+  Comma: [51],
+  Period: [52],
+  Slash: [53],
+  ShiftRight: [54],
+  NumpadMultiply: [55],
+  AltLeft: [56],
+  Space: [57],
+  CapsLock: [58],
+
+  F1: [59],
+  F2: [60],
+  F3: [61],
+  F4: [62],
+  F5: [63],
+  F6: [64],
+  F7: [65],
+  F8: [66],
+  F9: [67],
+  F10: [68],
+  NumLock: [69],
+  ScrollLock: [70],
+
+  Numpad7: [71],
+  Numpad8: [72],
+  Numpad9: [73],
+  NumpadSubtract: [74],
+  Numpad4: [75],
+  Numpad5: [76],
+  Numpad6: [77],
+  NumpadAdd: [78],
+  Numpad1: [79],
+  Numpad2: [80],
+  Numpad3: [81],
+  Numpad0: [82],
+  NumpadDecimal: [83],
+
+  F11: [87],
+  F12: [88],
+
+  ControlRight: [0xE0, 29],
+  AltRight: [0xE0, 56],
+  NumpadEnter: [0xE0, 28],
+  NumpadDivide: [0xE0, 53],
+  Home: [0xE0, 71],
+  ArrowUp: [0xE0, 72],
+  PageUp: [0xE0, 73],
+  ArrowLeft: [0xE0, 75],
+  ArrowRight: [0xE0, 77],
+  End: [0xE0, 79],
+  ArrowDown: [0xE0, 80],
+  PageDown: [0xE0, 81],
+  Insert: [0xE0, 82],
+  Delete: [0xE0, 83],
+  MetaLeft: [0xE0, 91],
+  MetaRight: [0xE0, 92],
+  ContextMenu: [0xE0, 93]
+};
+
+const make = c => {
+  const s = SC[c];
+  return s ? s.slice() : null;
+};
+
+const brk = c => {
+  const s = SC[c];
+  if (!s) return null;
+
+  const r = s.slice();
+  r[r.length - 1] |= 0x80;
+
+  return r;
+};
+
+/* 0 = off, 1 = one-shot (released after the next key), 2 = locked (double tap) */
+const mods = {
+  ControlLeft: 0, AltLeft: 0, ShiftLeft: 0,
+  ControlRight: 0, AltRight: 0, ShiftRight: 0
+};
+const anyShift = () => mods.ShiftLeft || mods.ShiftRight;
+const anyCtrlAlt = () => mods.ControlLeft || mods.AltLeft || mods.ControlRight || mods.AltRight;
+
+/* Keys already sent by keydown; prevents duplicate letters */
+const physicalDown = new Set();
+
+function sendMake(code) {
+  const seq = make(code);
+  if (seq && emu) emu.keyboard_send_scancodes(seq);
+  pressed.add(code);
+  kbVis(code);
+}
+
+function sendBreak(code) {
+  const seq = brk(code);
+  if (seq && emu) emu.keyboard_send_scancodes(seq);
+  pressed.delete(code);
+  kbVis(code);
+}
+
+function releaseAllMods(force) {
+  for (const code of Object.keys(mods)) {
+    if (mods[code] && (force === true || mods[code] === 1)) {
+      mods[code] = 0;
+      sendBreak(code);
+    }
+  }
+}
+
+function tap(code) {
+  /* goes through the key queue so it stays in order with typed text */
+  enq(() => sendMake(code));
+  enq(() => sendBreak(code));
+
+  /* release one-shot Ctrl / Alt; keep Shift if the user is holding it */
+  if (anyCtrlAlt() || anyShift()) enq(() => releaseAllMods());
+}
+
+function char2code(ch) {
+  if (/[a-z]/i.test(ch)) {
+    return {
+      c: 'Key' + ch.toUpperCase(),
+      sh: ch !== ch.toLowerCase()
+    };
+  }
+
+  if (/[0-9]/.test(ch)) {
+    return { c: 'Digit' + ch };
+  }
+
+  return null;
+}
+
+/* key queue so fast typing never drops keys */
+const kq = [];
+let kqRun = false;
+
+function enq(fn) {
+  kq.push(fn);
+  if (!kqRun) { kqRun = true; pump(); }
+}
+
+function pump() {
+  const f = kq.shift();
+  if (!f) { kqRun = false; return; }
+  try { f(); } catch (e) {}
+  setTimeout(pump, 14);
+}
+
+/* char -> [key code, needs shift] (US layout) */
+const CH = {};
+'abcdefghijklmnopqrstuvwxyz'.split('').forEach(c => {
+  CH[c] = ['Key' + c.toUpperCase(), 0];
+  CH[c.toUpperCase()] = ['Key' + c.toUpperCase(), 1];
+});
+'1234567890'.split('').forEach(c => CH[c] = ['Digit' + c, 0]);
+
+const SYM = { '-': 'Minus', '=': 'Equal', '[': 'BracketLeft', ']': 'BracketRight', ';': 'Semicolon',
+  "'": 'Quote', '`': 'Backquote', '\\': 'Backslash', ',': 'Comma', '.': 'Period', '/': 'Slash', ' ': 'Space' };
+for (const k in SYM) CH[k] = [SYM[k], 0];
+
+const SH1 = { '!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6', '&': '7', '*': '8', '(': '9', ')': '0' };
+for (const k in SH1) CH[k] = ['Digit' + SH1[k], 1];
+
+const SH2 = { '_': '-', '+': '=', '{': '[', '}': ']', ':': ';', '"': "'", '~': '`', '|': '\\', '<': ',', '>': '.', '?': '/' };
+for (const k in SH2) CH[k] = [SYM[SH2[k]], 1];
+
+CH['\n'] = ['Enter', 0];
+CH['\t'] = ['Tab', 0];
+
+function typeChar(ch) {
+  const m = CH[ch];
+  if (!m) return;
+
+  const needShift = m[1] && !anyShift();
+
+  if (needShift) enq(() => sendMake('ShiftLeft'));
+  enq(() => sendMake(m[0]));
+  enq(() => sendBreak(m[0]));
+  if (needShift) enq(() => sendBreak('ShiftLeft'));
+}
+
+function typeText(text) {
+  if (!emu || !text) return;
+
+  /* Ctrl / Alt are shortcut modifiers: Ctrl+C etc. */
+  if (anyCtrlAlt()) {
+    for (const ch of text) {
+      const mapped = char2code(ch);
+      if (mapped) {
+        enq(() => sendMake(mapped.c));
+        enq(() => sendBreak(mapped.c));
+      }
+    }
+    enq(() => releaseAllMods());
+    return;
+  }
+
+  for (const ch of text) typeChar(ch);
+
+  /* one-shot Shift is released after the typed characters have been sent */
+  enq(() => releaseAllMods());
+}
+
+/* ---------- on-screen keyboard + mouse overlay ---------- */
+const KBP = { on: true, mode: 'full', size: 'M', op: 0, fn: true, nav: true, x: null, y: null };
+try { Object.assign(KBP, JSON.parse(localStorage.getItem('pcl_kb') || '{}')); } catch (e) {}
+const saveKbp = () => { try { localStorage.setItem('pcl_kb', JSON.stringify(KBP)); } catch (e) {} };
+
+const kbo = $('#kbo');
+const kbBody = $('#kbBody');
+const MODKEYS = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight']);
+const FNK = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
+
+const kcell = (label, code, w = 1) => code
+  ? `<div class="kk${String(label).length > 3 ? ' lg' : ''}" style="--w:${w}" data-code="${code}"${MODKEYS.has(code) ? ' data-mod="1"' : ''}>${label}</div>`
+  : `<div class="kk sp" style="--w:${w}"></div>`;
+const krow = cells => `<div class="kr">${cells.join('')}</div>`;
+
+function fullKeysHTML() {
+  const sp = w => kcell(null, null, w);
+  const nv = (l, c) => KBP.nav ? kcell(l, c) : sp(1);
+  const L = s => [...s].map(c => kcell(c, 'Key' + c));
+  const rows = [];
+
+  if (KBP.fn) rows.push(krow([kcell('Esc', 'Escape', 1.5), ...FNK.map(f => kcell(f, f)), sp(1.5), sp(.3), sp(3)]));
+
+  rows.push(krow([
+    kcell(KBP.fn ? '`' : 'Esc', KBP.fn ? 'Backquote' : 'Escape'),
+    ...'1234567890'.split('').map(c => kcell(c, 'Digit' + c)),
+    kcell('-', 'Minus'), kcell('=', 'Equal'), kcell('⌫', 'Backspace', 2),
+    sp(.3), nv('Ins', 'Insert'), nv('Home', 'Home'), nv('PgUp', 'PageUp')
+  ]));
+  rows.push(krow([
+    kcell('Tab', 'Tab', 1.5), ...L('QWERTYUIOP'), kcell('[', 'BracketLeft'), kcell(']', 'BracketRight'), kcell('\\', 'Backslash', 1.5),
+    sp(.3), nv('Del', 'Delete'), nv('End', 'End'), nv('PgDn', 'PageDown')
+  ]));
+  rows.push(krow([
+    kcell('Caps', 'CapsLock', 1.75), ...L('ASDFGHJKL'), kcell(';', 'Semicolon'), kcell("'", 'Quote'), kcell('Enter', 'Enter', 2.25),
+    sp(.3), sp(3)
+  ]));
+  rows.push(krow([
+    kcell('Shift', 'ShiftLeft', 2.25), ...L('ZXCVBNM'), kcell(',', 'Comma'), kcell('.', 'Period'), kcell('/', 'Slash'), kcell('Shift', 'ShiftRight', 2.75),
+    sp(.3), sp(1), kcell('↑', 'ArrowUp'), sp(1)
+  ]));
+  rows.push(krow([
+    kcell('Ctrl', 'ControlLeft', 1.25), kcell('Win', 'MetaLeft', 1.25), kcell('Alt', 'AltLeft', 1.25), kcell('Space', 'Space', 6.25),
+    kcell('Alt', 'AltRight', 1.25), kcell('Win', 'MetaRight', 1.25), kcell('Menu', 'ContextMenu', 1.25), kcell('Ctrl', 'ControlRight', 1.25),
+    sp(.3), kcell('←', 'ArrowLeft'), kcell('↓', 'ArrowDown'), kcell('→', 'ArrowRight')
+  ]));
+  return `<div class="kbk">${rows.join('')}</div>`;
+}
+
+const fullMouseHTML = () => `
+  <div class="ms">
+    <div class="mt">
+      <div class="mbt" data-mb="l">L</div>
+      <div class="wh"><i data-w="1">▲</i><i data-w="-1">▼</i></div>
+      <div class="mbt" data-mb="r">R</div>
+    </div>
+    <div class="mm"><span data-mb="m" style="padding:6px 14px">M</span></div>
+  </div>`;
+
+function miniHTML() {
+  const sp = w => kcell(null, null, w);
+  return `<div class="kbk">
+      ${krow([kcell('Q', 'KeyQ'), kcell('W', 'KeyW'), kcell('E', 'KeyE')])}
+      ${krow([kcell('A', 'KeyA'), kcell('S', 'KeyS'), kcell('D', 'KeyD')])}
+      ${krow([kcell('Shift', 'ShiftLeft', 1.5), kcell('Space', 'Space', 1.5)])}
+      ${krow([kcell('Ctrl', 'ControlLeft', 1.5), kcell('Esc', 'Escape', 1.5)])}
+    </div>
+    <div class="ms2">
+      <div class="mbt" data-mb="l"><b>LMB</b><span data-cps="l">0</span></div>
+      <div class="mbt" data-mb="r"><b>RMB</b><span data-cps="r">0</span></div>
+      <div class="mbt" data-w="1" style="height:calc(var(--u)*.9);font-size:calc(var(--u)*.3)">▲ wheel</div>
+      <div class="mbt" data-w="-1" style="height:calc(var(--u)*.9);font-size:calc(var(--u)*.3)">▼ wheel</div>
+    </div>`;
+}
+
+function kbVis(code) {
+  const els = kbEls.get(code);
+  if (!els) return;
+  const on = pressed.has(code) || !!mods[code];
+  els.forEach(el => {
+    el.classList.toggle('dn', on);
+    el.classList.toggle('lock', mods[code] === 2);
+  });
+}
+
+function kbVisAll() {
+  for (const c of kbEls.keys()) kbVis(c);
+}
+
+function onMouse(l, m, r) {
+  const now = performance.now();
+  if (l && !mprev.l) mclicks.l.push(now);
+  if (r && !mprev.r) mclicks.r.push(now);
+  mprev.l = !!l; mprev.m = !!m; mprev.r = !!r;
+  msEls.l.forEach(e => e.classList.toggle('dn', !!l));
+  msEls.m.forEach(e => e.classList.toggle('dn', !!m));
+  msEls.r.forEach(e => e.classList.toggle('dn', !!r));
+}
+
+function buildKb() {
+  const wide = $('#stage').clientWidth > $('#stage').clientHeight * 1.15;
+  kbBody.className = (KBP.mode === 'full' && !wide) ? 'col' : '';
+  kbBody.innerHTML = KBP.mode === 'mini' ? miniHTML() : fullKeysHTML() + fullMouseHTML();
+
+  kbEls = new Map();
+  kbBody.querySelectorAll('[data-code]').forEach(el => {
+    const c = el.dataset.code;
+    if (!kbEls.has(c)) kbEls.set(c, []);
+    kbEls.get(c).push(el);
+  });
+  msEls = { l: [], m: [], r: [] };
+  kbBody.querySelectorAll('[data-mb]').forEach(el => msEls[el.dataset.mb].push(el));
+
+  kbVisAll();
+  onMouse(mprev.l, mprev.m, mprev.r);
+
+  $('#kbMode').textContent = KBP.mode === 'mini' ? 'Full' : 'Mini';
+  $('#kbSize').textContent = KBP.size;
+  $('#kbFn').classList.toggle('on', KBP.fn);
+  $('#kbNav').classList.toggle('on', KBP.nav);
+  $('#kbFn').style.display = $('#kbNav').style.display = KBP.mode === 'full' ? '' : 'none';
+  $('#bKeys').classList.toggle('on', KBP.on);
+  kbo.style.opacity = [1, .75, .5, .3][KBP.op % 4];
+}
+
+function layoutKb() {
+  const box = $('#stage');
+  const bw = box.clientWidth, bh = box.clientHeight;
+  if (!bw || !bh) return;
+
+  const mul = { S: .55, M: .78, L: 1 }[KBP.size] || .78;
+  let u;
+
+  if (KBP.mode === 'mini') {
+    u = { S: 26, M: 34, L: 44 }[KBP.size] || 34;
+  } else {
+    const wide = bw > bh * 1.15;
+    const units = wide ? 22.2 : 18.8;
+    u = Math.max(9, Math.min(36, (bw * .97 - 14) / units) * mul);
+  }
+
+  kbo.style.setProperty('--u', u.toFixed(1) + 'px');
+
+  /* position: remembered fraction, else bottom centre; always kept inside the stage */
+  const w = kbo.offsetWidth, h = kbo.offsetHeight;
+  let x = KBP.x == null ? (bw - w) / 2 : KBP.x * bw;
+  let y = KBP.y == null ? bh - h - 6 : KBP.y * bh;
+  x = Math.min(Math.max(0, x), Math.max(0, bw - w));
+  y = Math.min(Math.max(0, y), Math.max(0, bh - h));
+  kbo.style.left = x + 'px';
+  kbo.style.top = y + 'px';
+}
+
+function showKb() {
+  kbo.classList.toggle('on', KBP.on);
+  $('#bKeys').classList.toggle('on', KBP.on);
+  if (KBP.on) { buildKb(); layoutKb(); requestAnimationFrame(layoutKb); }
+}
+
+/* --- key / mouse presses (multi-touch, hold, auto-repeat) --- */
+const held = new Map();
+
+function holdStart(pid, entry, repeatFn) {
+  entry.t = setTimeout(() => { entry.r = setInterval(repeatFn, 65); }, 420);
+  held.set(pid, entry);
+}
+
+function holdStop(pid) {
+  const e = held.get(pid);
+  if (!e) return;
+  clearTimeout(e.t); clearInterval(e.r);
+  held.delete(pid);
+  if (e.up) e.up();
+}
+
+function modTap(code) {
+  const s = mods[code] || 0;
+  if (s === 0) { mods[code] = 1; sendMake(code); }
+  else if (s === 1) { mods[code] = 2; kbVis(code); }
+  else { mods[code] = 0; sendBreak(code); }
+}
+
+kbBody.addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-code],[data-mb],[data-w]');
+  if (!el || !emu) return;
+  e.preventDefault();
+  e.stopPropagation();
+  try { el.setPointerCapture(e.pointerId); } catch (err) {}
+
+  if (el.dataset.code) {
+    const code = el.dataset.code;
+    if (MODKEYS.has(code)) { modTap(code); return; }
+    sendMake(code);
+    holdStart(e.pointerId, { up: () => { sendBreak(code); releaseAllMods(); } }, () => sendMake(code));
+  } else if (el.dataset.mb) {
+    const b = el.dataset.mb;
+    const s = { l: mprev.l, m: mprev.m, r: mprev.r };
+    s[b] = true;
+    click(s.l, s.m, s.r);
+    held.set(e.pointerId, { up: () => { const q = { l: mprev.l, m: mprev.m, r: mprev.r }; q[b] = false; click(q.l, q.m, q.r); } });
+  } else {
+    const d = +el.dataset.w;
+    const go = () => emu && emu.bus.send('mouse-wheel', [d, 0]);
+    go();
+    holdStart(e.pointerId, {}, go);
+  }
+});
+
+const kbUp = e => holdStop(e.pointerId);
+kbBody.addEventListener('pointerup', kbUp);
+kbBody.addEventListener('pointercancel', kbUp);
+kbBody.addEventListener('contextmenu', e => e.preventDefault());
+
+/* keep touches on the overlay away from the trackpad handlers underneath */
+['touchstart', 'touchmove', 'touchend'].forEach(ev => kbo.addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+
+/* --- header: drag, mode, size, opacity, toggles --- */
+let drag = null;
+$('#kbHead').addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  e.preventDefault();
+  try { $('#kbHead').setPointerCapture(e.pointerId); } catch (err) {}
+  drag = { px: e.clientX, py: e.clientY, x: kbo.offsetLeft, y: kbo.offsetTop };
+});
+$('#kbHead').addEventListener('pointermove', e => {
+  if (!drag) return;
+  const box = $('#stage');
+  const x = Math.min(Math.max(0, drag.x + e.clientX - drag.px), Math.max(0, box.clientWidth - kbo.offsetWidth));
+  const y = Math.min(Math.max(0, drag.y + e.clientY - drag.py), Math.max(0, box.clientHeight - kbo.offsetHeight));
+  kbo.style.left = x + 'px';
+  kbo.style.top = y + 'px';
+});
+const dragEnd = () => {
+  if (!drag) return;
+  drag = null;
+  const box = $('#stage');
+  KBP.x = kbo.offsetLeft / box.clientWidth;
+  KBP.y = kbo.offsetTop / box.clientHeight;
+  saveKbp();
+};
+$('#kbHead').addEventListener('pointerup', dragEnd);
+$('#kbHead').addEventListener('pointercancel', dragEnd);
+
+const kbRefresh = () => { saveKbp(); buildKb(); layoutKb(); requestAnimationFrame(layoutKb); };
+$('#kbMode').onclick = () => { KBP.mode = KBP.mode === 'mini' ? 'full' : 'mini'; KBP.x = KBP.y = null; kbRefresh(); };
+$('#kbSize').onclick = () => { KBP.size = { S: 'M', M: 'L', L: 'S' }[KBP.size] || 'M'; kbRefresh(); };
+$('#kbOp').onclick = () => { KBP.op = (KBP.op + 1) % 4; kbRefresh(); };
+$('#kbFn').onclick = () => { KBP.fn = !KBP.fn; kbRefresh(); };
+$('#kbNav').onclick = () => { KBP.nav = !KBP.nav; kbRefresh(); };
+$('#kbX').onclick = () => { KBP.on = false; saveKbp(); showKb(); };
+$('#bKeys').onclick = () => { KBP.on = !KBP.on; saveKbp(); showKb(); };
+$('#kbCad').onclick = () => {
+  if (!emu) return;
+  const seq = ['ControlLeft', 'AltLeft', 'Delete'];
+  seq.forEach(sendMake);
+  setTimeout(() => seq.slice().reverse().forEach(sendBreak), 80);
+};
+
+setInterval(() => {
+  if (!kbo.classList.contains('on') || KBP.mode !== 'mini') return;
+  const now = performance.now();
+  for (const b of ['l', 'r']) {
+    mclicks[b] = mclicks[b].filter(x => now - x < 1000);
+    const el = kbBody.querySelector(`[data-cps="${b}"]`);
+    if (el && el.textContent !== String(mclicks[b].length)) el.textContent = mclicks[b].length;
+  }
+}, 120);
+
+addEventListener('resize', () => { if (KBP.on) { buildKb(); layoutKb(); } });
+addEventListener('orientationchange', () => setTimeout(() => { if (KBP.on) { buildKb(); layoutKb(); } }, 350));
+
+/* ---------- Android soft keyboard ---------- */
+const ta = $('#ta');
+
+$('#bKb').onclick = () => {
+  ta.value = '';
+  ta.focus();
+};
+
+ta.addEventListener('keydown', e => {
+  if (!emu) return;
+
+  /* Do not break Android autocorrect, swipe typing, or emoji input */
+  if (e.isComposing || e.keyCode === 229) return;
+
+  /* Let the browser handle copy / paste / select-all locally */
+  if (e.ctrlKey || e.metaKey) return;
+
+  if (SC[e.code]) {
+    if (!physicalDown.has(e.code)) {
+      physicalDown.add(e.code);
+      sendMake(e.code);
+    }
+
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('keyup', e => {
+  if (!emu) return;
+
+  if (e.isComposing || e.keyCode === 229) return;
+
+  if (SC[e.code]) {
+    physicalDown.delete(e.code);
+    sendBreak(e.code);
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('beforeinput', e => {
+  if (!emu) return;
+
+  if (e.inputType === 'deleteContentBackward') {
+    tap('Backspace');
+    e.preventDefault();
+    return;
+  }
+
+  if (e.inputType === 'insertLineBreak') {
+    tap('Enter');
+    e.preventDefault();
+    return;
+  }
+
+  if (e.data) {
+    typeText(e.data);
+    e.preventDefault();
+  }
+});
+
+ta.addEventListener('input', () => {
+  /* Text is handled in beforeinput; keep hidden textarea empty */
+  if (ta.value) ta.value = '';
+});
+
+/* ---------- Bluetooth / physical keyboard ---------- */
+addEventListener('keydown', e => {
+  if (!emu || !$('#run').classList.contains('on') || e.target === ta) return;
+
+  if (e.repeat && physicalDown.has(e.code)) {
+    e.preventDefault();
+    return;
+  }
+
+  if (SC[e.code]) {
+    if (!physicalDown.has(e.code)) {
+      physicalDown.add(e.code);
+      sendMake(e.code);
+    }
+
+    e.preventDefault();
+  }
+});
+
+addEventListener('keyup', e => {
+  if (!emu || !$(
